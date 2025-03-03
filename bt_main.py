@@ -42,12 +42,13 @@ class BuyOnlyStrategy(bt.Strategy):
         # 输出每天的单位净值减去1的值
         self.log('单位净值-1: %.6f' % (self.dataclose[0] - 1))
 
-# 创建Cerebro引擎对象
+# 创建Cerebro引擎对象======================================================================
 cerebro = bt.Cerebro()
 
-# 添加策略
+# 添加策略=================================================================================
 cerebro.addstrategy(BuyOnlyStrategy)
 
+# 导入数据=================================================================================
 # 调用get_funddata_csv函数获取数据源
 df = get_funddata_csv('csv_data/008087test.csv')
 
@@ -62,12 +63,10 @@ data = bt.feeds.PandasData(
     volume=None,
     openinterest=None
 )
+cerebro.adddata(data)                   # 加载交易数据到cerebro引擎
 
-# 加载交易数据
-cerebro.adddata(data)
-
-# 设置初始资金量
-cerebro.broker.set_cash(100000)
+# 开始执行回测=================================================================================
+cerebro.broker.set_cash(100000)         # 设置初始资金量
 print('Starting Portfolio Value: %.2f' % cerebro.broker.getvalue())
 cerebro.run()
 print('Final Portfolio Value: %.2f' % cerebro.broker.getvalue())
