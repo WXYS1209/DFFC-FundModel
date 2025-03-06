@@ -1,0 +1,13 @@
+[project]
+name = "dffc-fundmodel"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "backtesting>=0.6.2",
+    "basana[charts]>=1.7.1",
+    "pandas>=2.2.3",
+    "statsmodels>=0.14.4",
+    "talipp>=2.4.1",
+]
