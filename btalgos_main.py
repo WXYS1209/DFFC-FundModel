@@ -47,8 +47,8 @@ class WeighSMA(bt.Algo):
             # 测试一下是否初始化成功 print(target.perm['indicators'].index)
 
         # c. 计算中间变量并记录到target.perm.indicators中
-        print(target.universe.loc[:,"单位净值"])
-        print(target.data)
+#        print(target.universe.loc[:,"单位净值"])
+#        print(target.data)
         target.perm['indicators'].loc[current_date,'testindicator1'] = 1
 
         # d. 计算权重并记录到target.temp.weights中
@@ -77,12 +77,12 @@ result = bt.run(test)
 
 # 6.对计算结果可视化=================================================================================
 # 使用temp.perm['indicators']记录的中间变量
-print("中间变量记录:")
-print(test.strategy.perm['indicators'])
-print(test.strategy.data)
+#print("中间变量记录:")
+#print(test.strategy.perm['indicators'])
+#print(test.strategy.data)
 
 # 使用result.display()和result.plot()查看回测结果
-result.display()
+# result.display()
 # result.plot()
 # import matplotlib.pyplot as plt
 # plt.show()  # 添加此行以显示图形
