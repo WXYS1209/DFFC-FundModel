@@ -1,6 +1,10 @@
+# %%
 import numpy as np
 import pandas as pd
+import scipy.optimize as opt
+from tqdm import tqdm
 
+# %%
 # 新增函数：导入CSV数据，返回单位净值列的numpy数组
 def get_unit_nav_numpy(path):
     df = pd.read_csv(
@@ -120,40 +124,79 @@ def calc_RSS(fluc_A, fluc_B, scaling_factor):
     rss = np.sum((fluc_A - scaling_factor * fluc_B) ** 2)
     return rss
 
+# 目标函数：给定参数 (alpha, beta, gamma)，以及外部的 season_length (current_season)
+def objective(params, arr, season_length, data_begindate):
+    alpha, beta, gamma = params
+    # 使用 Holt-Winters 滚动平滑，注意函数内部对于数据不足一个周期的处理
+    holtwinters_data = holtwinters_rolling(arr, alpha, beta, gamma, season_length=season_length)
+    holtwinters_fluc_data = arr - holtwinters_data
+    # 选取数据子区间进行比较
+    fluc_sub = fluc_data[data_begindate:-1]
+    holtwinters_fluc_sub = holtwinters_fluc_data[data_begindate:-1]
+    # 计算最优缩放因子
+    a = calc_scaling_factor(fluc_sub, holtwinters_fluc_sub)
+    # 返回残差平方和
+    rss = calc_RSS(fluc_sub, holtwinters_fluc_sub, a)
+    return rss
+    
+# %%
 # 测试新函数（仅供调试，可删除）
 if __name__ == "__main__":
-    # 导入数据并计算滑动平均
-    original_data=np.flip(get_unit_nav_numpy("./csv_data/008299.csv"))
-    mean_data=sliding_average(original_data,50)
-    fluc_data=original_data-mean_data
+    original_data = np.flip(get_unit_nav_numpy("../csv_data/008299.csv"))
 
-    # 计算Holt-Winters滚动平滑后的数据
-    # Holt-Winters平滑参数
-    alpha = 0.079
-    beta = 0.009    
-    gamma = 0.1
-    season = 7
-    holtwinters_data = holtwinters_rolling(original_data, alpha, beta, gamma, season_length=season)
-    holtwinters_fluc_data=original_data-holtwinters_data
+    # 计算滑动平均和波动数据
+    mean_data = sliding_average(original_data, 50)
+    fluc_data = original_data - mean_data
+    
+    # 优化区间：对于 season_length 我们尝试 2 到 14
+    best_rss = np.inf
+    best_params = None
+    best_season = None
 
-    # 计算缩放因子 a，满足 fluc_data ≈ a * holtwinters_fluc_data
-    holtwinters_begindate=-800
-    a = calc_scaling_factor(fluc_data[holtwinters_begindate:-1], holtwinters_fluc_data[holtwinters_begindate:-1])
-    print("缩放因子 a =", a)
-    print("即 fluc_data ≈ a * holtwinters_fluc_data")
+    # 仅对数据后部分进行拟合（如代码中holtwinters_begindate的设定）
+    holtwinters_begindate = -800
 
-    # 根据缩放因子a，计算两个子序列的缩放后的残差平方和（Residual Sum of Squares, RSS）
-    rss = calc_RSS(fluc_data[holtwinters_begindate:-1], holtwinters_fluc_data[holtwinters_begindate:-1], a)
-    print("残差平方和 (RSS) =", rss)
+    # 自定义停止条件
+    options = {
+        'ftol': 1e-9,     # 目标函数值的容忍度
+        'gtol': 1e-6,     # 梯度的容忍度
+        'maxiter': 1000,  # 最大迭代次数
+        'maxfun': 10000  # 最大函数调用次数
+        'disp': True      # 打印收敛信息
+    }
+
+    # 对 season_length 进行网格搜索
+    for season in tqdm(range(7, 15), unit="season"):
+        # 初始猜测（可根据实际情况调整）
+        initial_guess = [0.1, 0.1, 0.1]
+        # 参数边界，通常平滑参数取值在 (0,1)
+        bounds = [(0.0001, 1.0), (0.0001, 1.0), (0.0001, 1.0)]
+        res = opt.minimize(objective, 
+                           initial_guess, 
+                           args=(original_data, season, holtwinters_begindate), 
+                           bounds=bounds,
+                           method='L-BFGS-B',
+                           options=options)
+        if res.fun < best_rss:
+            best_rss = res.fun
+            best_params = res.x
+            best_season = season
+    
+    print("最优参数：")
+    print("alpha = {:.4f}, beta = {:.4f}, gamma = {:.4f}, season_length = {}".format(best_params[0], best_params[1], best_params[2], best_season))
+    print("对应 RSS =", best_rss)
 
     # 使用matplotlib绘图
-    # import matplotlib.pyplot as plt  # 如果已导入则忽略
-    # plt.figure(figsize=(10, 4))
-    # plt.plot(original_data, label='Original Data', marker='o', linestyle='-')
-    # plt.plot(mean_data, label='Sliding Average', marker='x', linestyle='--')
-    # plt.title('Original Data vs. Sliding Average')
-    # plt.xlabel('Index')
-    # plt.ylabel('Value')
-    # plt.legend()
-    # plt.grid(True)
-    # plt.show()
+    import matplotlib.pyplot as plt  # 如果已导入则忽略
+    plt.figure(figsize=(10, 4))
+    plt.plot(original_data, label='Original Data', marker='o', linestyle='-')
+    plt.plot(mean_data, label='Sliding Average', marker='x', linestyle='--')
+    plt.plot(holtwinters_rolling(original_data, best_params[0], best_params[1], best_params[2], best_season),
+                                 label='HoltWinter')
+    plt.title('')
+    plt.xlabel('Index')
+    plt.ylabel('Value')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+# %%
