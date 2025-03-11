@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import scipy.optimize as opt
 from tqdm import tqdm
+from concurrent.futures import ProcessPoolExecutor, as_completed  # 新增导入
 
 # %%
 # 新增函数：导入CSV数据，返回单位净值列的numpy数组
@@ -138,42 +139,53 @@ def objective(params, arr, season_length, data_begindate):
     # 返回残差平方和
     rss = calc_RSS(fluc_sub, holtwinters_fluc_sub, a)
     return rss
-    
-# %%
-# 测试新函数（仅供调试，可删除）
-if __name__ == "__main__":
-    original_data = np.flip(get_unit_nav_numpy("../csv_data/008299.csv"))
 
-    # 计算滑动平均和波动数据
+def optimize_holtwinters_parameters(original_data, holtwinters_begindate, holtwinters_enddate):
+    """
+    对给定数据区间进行参数优化，返回最优参数和最优季节长度。
+
+    参数:
+      original_data: 原始数据 numpy 数组
+      holtwinters_begindate: 开始拟合的索引
+      holtwinters_enddate: 结束拟合的索引（不包含此索引之后的数据）
+
+    返回:
+      best_params: [alpha, beta, gamma]
+      best_season: 最佳季节长度
+      best_rss: 最小残差平方和
+    """
+    # 在函数内计算波动数据
     mean_data = sliding_average(original_data, 50)
     fluc_data = original_data - mean_data
-    
-    # 优化区间：对于 season_length 我们尝试 2 到 14
+
     best_rss = np.inf
     best_params = None
     best_season = None
 
-    # 仅对数据后部分进行拟合（如代码中holtwinters_begindate的设定）
-    holtwinters_begindate = -800
-
-    # 自定义停止条件
     options = {
-        'ftol': 1e-9,     # 目标函数值的容忍度
-        'gtol': 1e-6,     # 梯度的容忍度
-        'maxiter': 1000,  # 最大迭代次数
-        'maxfun': 10000  # 最大函数调用次数
-        'disp': True      # 打印收敛信息
+        'ftol': 1e-9,
+        'gtol': 1e-6,
+        'maxiter': 1000,
+        'maxfun': 10000,
+        'disp': True
     }
 
-    # 对 season_length 进行网格搜索
-    for season in tqdm(range(7, 15), unit="season"):
-        # 初始猜测（可根据实际情况调整）
-        initial_guess = [0.1, 0.1, 0.1]
-        # 参数边界，通常平滑参数取值在 (0,1)
-        bounds = [(0.0001, 1.0), (0.0001, 1.0), (0.0001, 1.0)]
-        res = opt.minimize(objective, 
-                           initial_guess, 
-                           args=(original_data, season, holtwinters_begindate), 
+    for season in range(7, 15):
+        initial_guess = [0.05, 0.01, 0.2]
+        bounds = [(0.0001, 0.5), (0.0001, 0.5), (0.0001, 1.0)]
+
+        def local_objective(params):
+            alpha, beta, gamma = params
+            smoothed = holtwinters_rolling(original_data, alpha, beta, gamma, season_length=season)
+            holtwinters_fluc = original_data - smoothed
+            fluc_sub = fluc_data[holtwinters_begindate:holtwinters_enddate]
+            holtwinters_fluc_sub = holtwinters_fluc[holtwinters_begindate:holtwinters_enddate]
+            a = calc_scaling_factor(fluc_sub, holtwinters_fluc_sub)
+            rss = calc_RSS(fluc_sub, holtwinters_fluc_sub, a)
+            return rss
+
+        res = opt.minimize(local_objective,
+                           initial_guess,
                            bounds=bounds,
                            method='L-BFGS-B',
                            options=options)
@@ -181,18 +193,53 @@ if __name__ == "__main__":
             best_rss = res.fun
             best_params = res.x
             best_season = season
-    
-    print("最优参数：")
-    print("alpha = {:.4f}, beta = {:.4f}, gamma = {:.4f}, season_length = {}".format(best_params[0], best_params[1], best_params[2], best_season))
-    print("对应 RSS =", best_rss)
 
-    # 使用matplotlib绘图
+    return best_params, best_season, best_rss
+    
+# 新增辅助函数，用于并行计算
+def compute_optimize_result(end_day, original_data):
+    best_params, best_season, best_rss = optimize_holtwinters_parameters(original_data, -800, end_day)
+    return {
+        "end_day": end_day,
+        "alpha": best_params[0],
+        "beta": best_params[1],
+        "gamma": best_params[2],
+        "season": best_season,
+        "rss": best_rss
+    }
+
+# %%
+# 测试新函数（仅供调试，可删除）
+if __name__ == "__main__":
+    original_data = np.flip(get_unit_nav_numpy("./csv_data/008299.csv"))
+    mean_data = sliding_average(original_data, 50)  # 计算滑动平均
+
+    # 设置可调并行线程数
+    max_workers = 12  # 根据需要调整线程数
+
+    end_days = list(range(-600, 0, 50))
+    if -1 not in end_days:
+        end_days.append(-1)
+    results = []
+    with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        futures = {executor.submit(compute_optimize_result, end_day, original_data): end_day for end_day in end_days}
+        for future in as_completed(futures):
+            result = future.result()
+            results.append(result)
+            print(f"end_day={result['end_day']}, 参数: {[result['alpha'], result['beta'], result['gamma']]}, season={result['season']}, rss={result['rss']}")
+    
+    results_df = pd.DataFrame(results)
+    results_df.to_csv("./holtwinters_results.csv", index=False)
+    
+    # 绘图部分，使用最后一次优化的结果
     import matplotlib.pyplot as plt  # 如果已导入则忽略
     plt.figure(figsize=(10, 4))
     plt.plot(original_data, label='Original Data', marker='o', linestyle='-')
     plt.plot(mean_data, label='Sliding Average', marker='x', linestyle='--')
-    plt.plot(holtwinters_rolling(original_data, best_params[0], best_params[1], best_params[2], best_season),
-                                 label='HoltWinter')
+    # 使用最后一个处理结果来绘图
+    last_result = results[-1]
+    plt.plot(holtwinters_rolling(original_data, last_result['alpha'], last_result['beta'], last_result['gamma'], last_result['season']),
+             label='HoltWinter')
     plt.title('')
     plt.xlabel('Index')
     plt.ylabel('Value')
