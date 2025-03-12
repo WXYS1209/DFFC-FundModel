@@ -20,6 +20,65 @@ described below, $V \propto \sigma$.
 
 Thus, the money-generating rate $M = V/T$. Higher $M$ means more money.
 
+## stochastic strategy model for one fund
+### Fund Price Expression
+Fund price at time $t$ can be describe by 2 part, the baseline part $f_0(t)$ and the fluctuative part $\xi(t)$, where
+
+$$
+f(t)=f_0(t)+\xi(t)
+$$
+
+   The fluctuation can be fully discribed by
+$$
+   \langle\xi(t)\rangle=0
+$$
+
+$$
+   \langle\xi(t')\xi(t'+t)\rangle=C(t)
+$$
+
+   For white Gaussian noise, $C(t)=\sigma^2\delta(t)$. For real fund fluctuation data, $C(t)=\sigma^2 e^{-\lambda t}$
+
+### Strategy Expression
+For sake of simplisity, we consider continuous strategy expression, the fund we bought per unit time $B$ is a function of fluctuation. 
+
+$$
+\frac{dB}{dt}=g(\xi)
+$$
+For example, a linear strategy
+
+$$
+\frac{dB}{dt}=k \xi(t)
+$$
+
+### Calculation
+Expence $U(t)$, 
+$$
+U(t)=\int dB=\int _0^t k \xi(t') dt'
+$$
+
+Assets $M(t)$,
+$$
+M(t)=f(t)\cdot\int _0^t \frac{dB}{f_0 (t)+\xi(t)}=f(t) \int _0^t \frac{k\xi(t')}{f(t')}dt'
+$$
+
+Profet $M-U$
+$$
+\begin{aligned}
+M(t)-U(t)&=f(t)\cdot \int _0^t \frac{k\xi(t')}{f(t')}dt'-\int _0^t k \xi(t') dt'\\
+&= \int _0^t \frac{f(t)-f(t')}{f(t')}k\xi(t')dt'
+\end{aligned}
+$$
+
+Suppose $\xi(t)<<f_0(t)$
+$$
+\begin{aligned}
+M(t)-U(t)&=f(t)\cdot \int _0^t \frac{k\xi(t')}{f(t')}dt'-\int _0^t k \xi(t') dt'\\
+&=f(t)\cdot \int _0^t \frac{k\xi(t')}{f_0(t')}\left(1-\frac{\xi(t')}{f_0(t')}\right)dt'-\int _0^t k \xi(t') dt'\\
+&=f(t)\cdot \int _0^t \frac{k\xi(t')}{f_0(t')}dt'-f(t)\cdot \int _0^t \frac{k\xi^2(t')}{f_0^2(t')}dt'-\int _0^t k \xi(t') dt'
+\end{aligned}
+$$
+
 ## Strategy for 2 funds
 we have 2 funds $f$ and $g$.
 
