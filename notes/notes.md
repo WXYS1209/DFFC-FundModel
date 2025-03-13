@@ -43,6 +43,7 @@ f(t)=f_0(t)+\xi(t)
 $$
 
    The fluctuation can be fully discribed by
+
 $$
    \langle\xi(t)\rangle=0
 $$
@@ -59,6 +60,7 @@ For sake of simplisity, we consider continuous strategy expression, the fund we 
 $$
 \frac{dB}{dt}=g(\xi)
 $$
+
 For example, a linear strategy
 
 $$
@@ -67,16 +69,19 @@ $$
 
 ### Calculation
 Cost $U(t)$, 
+
 $$
 U(t)=\int dB=\int _0^t -k \xi(t') dt'
 $$
 
 Assets $M(t)$,
+
 $$
 M(t)=f(t)\cdot\int _0^t \frac{dB}{f_0 (t)+\xi(t)}=-f(t) \int _0^t \frac{k\xi(t')}{f(t')}dt'
 $$
 
 Profet $M-U$
+
 $$
 \begin{aligned}
 M(t)-U(t)&=-f(t)\cdot \int _0^t \frac{k\xi(t')}{f(t')}dt'+\int _0^t k \xi(t') dt'\\
@@ -85,6 +90,7 @@ M(t)-U(t)&=-f(t)\cdot \int _0^t \frac{k\xi(t')}{f(t')}dt'+\int _0^t k \xi(t') dt
 $$
 
 Suppose $\xi(t)<<f_0(t)$
+
 $$
 \begin{aligned}
 M(t)-U(t)&=-f(t)\cdot \int _0^t \frac{k\xi(t')}{f(t')}dt'+\int _0^t k \xi(t') dt'\\
@@ -94,11 +100,13 @@ M(t)-U(t)&=-f(t)\cdot \int _0^t \frac{k\xi(t')}{f(t')}dt'+\int _0^t k \xi(t') dt
 $$
 
 Consider $f_0(t)$ as a linear function of t, which
+
 $$
 f_0(t)=a t+1
 $$
 
 We get
+
 $$
 \begin{aligned}
 M(t)-U(t)
@@ -109,6 +117,7 @@ $$
 
 ### Result
 The Expectation of Profet
+
 $$
 \begin{aligned}
    \langle M-U\rangle&=(a t+1)\cdot \int _0^t \frac{k\langle\xi^2(t')\rangle}{(at'+1)^2}dt'\\
@@ -118,6 +127,7 @@ $$
 $$
 
 The Variance of Cost
+
 $$
 \begin{aligned}
    \langle U^2\rangle&=\langle\int _0^t  k \xi(t') dt'\cdot \int _0^t  k \xi(t'') dt''\rangle\\
