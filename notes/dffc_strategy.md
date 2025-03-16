@@ -43,11 +43,11 @@
 有时候，我们会发现同一基金公司的几只基金，尽管看起来名字不一样，覆盖领域也不尽相同，但是却涨落高度相关。
 
 例如，富国基金公司的以下两只基金：
-<img src="./fig/co_history.jpeg" alt="示例图片" width="500" title="示例图片"/>
+<img src="./fig/co_history.jpeg" alt="示例图片" width="585" title="示例图片"/>
 
 计算其在五十日均线附近的涨落，乘以倍数，我们发现其涨落高度及接近，这时便可对于这两只基金实现统计套利。
 
-<img src="./fig/co_fluc.jpeg" alt="示例图片" width="500" title="示例图片"/>
+<img src="./fig/co_fluc.jpeg" alt="示例图片" width="610" title="示例图片"/>
 
 ##### 统计套利
 参考DeepSeek.
@@ -77,13 +77,17 @@
 
 #### Holt-winters二参数模型
 <div style="background-color: #f0f0f0; padding: 10px;">
+
 Holt-Winters 双参数模型适用于具有**趋势成分**但**无季节性波动**的数据。它通过两个平滑参数（α 和 β）分别对序列的**水平**和**趋势**进行动态调整。
 
 预测方程
+
 \[
 \hat{y}_{t+h} = L_t + h \cdot T_t
 \]
+
 水平方程+趋势方程
+
 \[
 L_t = \alpha y_t + (1 - \alpha)(L_{t-1} + T_{t-1})
 \]
@@ -91,50 +95,63 @@ L_t = \alpha y_t + (1 - \alpha)(L_{t-1} + T_{t-1})
 \[
 T_t = \beta (L_t - L_{t-1}) + (1 - \beta) T_{t-1}
 \]
+
 - \( \alpha \): 水平平滑参数（0 ≤ α ≤ 1）
 - \( \beta \): 趋势平滑参数（0 ≤ β ≤ 1）
 </div>
 
 #### Holt-Winters三参数+季节性模型
 <div style="background-color: #f0f0f0; padding: 10px;">
+
 Holt-Winters 三参数模型适用于同时包含**趋势成分**和**季节性波动**的时间序列数据。通过三个平滑参数（α、β、γ）分别对**水平**、**趋势**和**季节性成分**进行动态调整，支持**加法**与**乘法**两种季节性模式。
 
 #### 1. 水平方程
 **加法模型**：  
+
 \[
 L_t = \alpha (y_t - S_{t-m}) + (1 - \alpha)(L_{t-1} + T_{t-1})
 \]  
+
 **乘法模型**：  
+
 \[
 L_t = \alpha \frac{y_t}{S_{t-m}} + (1 - \alpha)(L_{t-1} + T_{t-1})
 \]
 
 #### 2. 趋势方程
+
 \[
 T_t = \beta (L_t - L_{t-1}) + (1 - \beta) T_{t-1}
 \]
 
 #### 3. 季节性方程
 **加法模型**：  
+
 \[
 S_t = \gamma (y_t - L_t) + (1 - \gamma) S_{t-m}
 \]  
+
 **乘法模型**：  
+
 \[
 S_t = \gamma \frac{y_t}{L_t} + (1 - \gamma) S_{t-m}
 \]
 
 #### 4. 预测方程
 **加法模型**（季节性波动恒定）：  
+
 \[
 \hat{y}_{t+h} = (L_t + h \cdot T_t) + S_{t+h-m}
 \]  
+
 **乘法模型**（季节性波动随水平变化）：  
+
 \[
 \hat{y}_{t+h} = (L_t + h \cdot T_t) \times S_{t+h-m}
 \]
 
 ### 参数说明
+
 - \( \alpha \)（水平参数）：调节**当前观测值**与**历史平滑水平**的权重（0 ≤ α ≤ 1）  
 - \( \beta \)（趋势参数）：控制**趋势变化的更新速度**（0 ≤ β ≤ 1）  
 - \( \gamma \)（季节性参数）：平衡**当前季节性效应**与**历史季节性模式**（0 ≤ γ ≤ 1）  
