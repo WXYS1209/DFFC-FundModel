@@ -1,4 +1,4 @@
-# DFFC-FoF-FundModel
+# DFFC-FOF-FundModel
 ---
 ## A. 基本思路
 ### 1. 盈利思路
@@ -53,7 +53,7 @@
 
 <img src="./fig/co_fluc.jpeg" alt="示例图片" width="610" title="示例图片"/>
 
-##### 统计套利
+##### 波差统计套利
 参考DeepSeek.
 
 #### 总而言之，我们可以通过同一基金公司所有波动较大的基金，相关的基金分组实现统计套利，各组之间用不相关方法调仓，构成一只基金！
@@ -159,7 +159,7 @@ $$
 - $\alpha$（水平参数）：调节**当前观测值**与**历史平滑水平**的权重（0 ≤ α ≤ 1）  
 - $\beta$（趋势参数）：控制**趋势变化的更新速度**（0 ≤ β ≤ 1）  
 - $\gamma$（季节性参数）：平衡**当前季节性效应**与**历史季节性模式**（0 ≤ γ ≤ 1）  
-- $m$ ：季节性周期长度（如月度数据 $ m=12 $，季度数据 $ m=4 $）
+- $m$ ：季节性周期长度（如月度数据 $ m=12 $ ，季度数据 $ m=4 $ ）
 
 - **加法模型**：季节性波动的幅度**不随序列水平变化**（如气温季节性波动）  
 - **乘法模型**：季节性波动的幅度**随序列水平增长而扩大**（如节假日销售额）  
@@ -199,6 +199,122 @@ holtwinter_op.py中，待补充
 交叉验证的稳定性；
 
 ### 2. 涨落收益策略
-#### 随机模型
-- 维纳过程
-- 谐振势中的布朗运动模型
+
+自此，我们已经成功的把一只基金数据拆分成了长线部分（baseline part）和涨落部分（fluctuation part）。接下来，我们需要讨论基于这两部分的信息，我们如何制定投资策略，才能收益最大化，或者说
+
+“**在风险确定的情况下，可以找到对应的最大收益**”——马科维茨
+
+观察下面一个基金的涨落，我们发现以下几点是深刻影响我们的策略的。
+
+<img src="./fig/modeldata0.jpeg" alt="示例图片" width="610" title="示例图片"/>
+
+
+<img src="./fig/modeldatafluc.jpeg" alt="示例图片" width="610" title="示例图片"/>
+
+- 长线部分的涨跌
+- 涨落部分的涨落幅度
+- 涨落部分的时间关联（波动是有惯性的，不是白噪声）
+基于这三点，我们构建理论模型，希望可以理论推导最大收益/风险比
+
+#### 随机模型——谐振势中的布朗运动模型
+
+考虑一个一维线性恢复力下的布朗运动粒子，其受力方程为
+
+$$
+\ddot{x}=-\frac{\gamma}{m}\dot{x}-\omega _0^2 x+\frac{1}{m}\xi(t)
+$$
+
+其中，随机项 $\xi(t)$ 为高斯随机白噪声
+
+$$
+   \langle\xi(t)\rangle=0
+$$
+
+$$
+   \langle\xi(t')\xi(t'+t)\rangle=2\gamma k_B T \delta(t)
+$$
+
+求解：对受力方程傅里叶变换，可以解得
+
+$$
+x(\omega)=\frac{\xi(\omega)}{m\left(\omega _0^2-\omega^2-i\gamma\omega/m\right)}
+$$
+
+能谱密度
+
+$$
+S(\omega)=|x(\omega)|^2=\frac{2 \gamma k_{\mathrm{B}} T}{m^2} \frac{1}{\left[\left(\omega_0^2-\omega^2\right)^2+\frac{\gamma^2}{m^2} \omega^2\right]}
+$$
+
+稳态情况下的时间关联函数为能谱密度的傅里叶变换
+
+$$
+\begin{aligned}
+C(t)&=\frac{1}{2 \pi} \int_{-\infty}^{\infty} \mathrm{d} \omega \mathrm{e}^{-\mathrm{i} \omega t} S_x(\omega)\\
+&=\frac{k_{\mathrm{B}} T}{m \omega_0^2} \mathrm{e}^{-\frac{\gamma}{2 m} t}\left\{\cos \omega_1 t+\frac{\gamma}{2 m \omega_1} \sin \omega_1 t\right\}
+\end{aligned}
+$$
+
+其中，
+
+$$
+\omega_1=\sqrt{\omega_0^2-\gamma^2 / 4 m^2}
+$$
+
+#### Ornstein-Uhlenbeck Process
+也有更简化，略去阻力的Ornstein-Uhlenbeck过程
+
+$$
+\dot{x}=-\theta x+\sigma \xi(t)
+$$
+
+$$
+   \langle\xi(t)\rangle=0
+$$
+
+$$
+   \langle\xi(t')\xi(t'+t)\rangle= \delta(t)
+$$
+
+使用一阶常系数非齐次微分方程通解，可以解得
+
+$$
+x(t)=\sigma\int^t_0 e^{-\theta\left(t-s\right)}\xi(s)ds
+$$
+
+计算时间关联可以得到
+
+$$
+\begin{aligned}
+C(t_1,t_2)&=\langle x(t_1)x(t_2) \rangle _\xi\\
+&=\sigma^2\langle \int^{t_1}_0 e^{-\theta\left(t_1-s_1\right)}\xi(s_1)ds_1\int^{t_2}_0 e^{-\theta\left(t_2-s_2\right)}\xi(s_2)ds_2\rangle\\
+&=\sigma^2 e^{-\theta\left(t_1+t_2\right)} \langle \int^{t_2}_0\int^{t_1}_0 e^{\theta\left(s_1+s_2\right)}\xi(s_1)\xi(s_2)ds_1ds_2\rangle\\
+&=\sigma^2 e^{-\theta\left(t_1+t_2\right)} \int^{t_2}_0\int^{t_1}_0 e^{\theta\left(s_1+s_2\right)}\langle \xi(s_1)\xi(s_2) \rangle ds_1ds_2\\
+&=\sigma^2 e^{-\theta\left(t_1+t_2\right)} \int^{t_2}_0\int^{t_1}_0 e^{\theta\left(s_1+s_2\right)}\delta(s_1-s_2) ds_1ds_2\\
+&=\sigma^2 e^{-\theta\left(t_1+t_2\right)} \int^{t_2}_0 e^{2\theta s_2}ds_2\\
+&=\frac{\sigma^2}{2\theta} e^{-\theta |t_1-t_2|}
+\end{aligned}
+$$
+
+为什么？知乎？统计套利的基石。
+
+#### 真实数据的模型拟合
+
+008299数据在50日均线上下的涨落数据
+
+<img src="./fig/008299historyfluc.jpeg" alt="示例图片" width="500" title="示例图片"/>
+
+涨落数据的概率密度
+
+<img src="./fig/fluc_pdf.jpeg" alt="示例图片" width="400" title="示例图片"/>
+
+涨落数据的时间关联
+
+<img src="./fig/fluc_co.jpeg" alt="示例图片" width="400" title="示例图片"/>
+
+##### 分析
+- 时间关联函数不是单纯的指数衰减，在20日左右包含小于0的回调部分，可能代表着最佳的操作周期，OU过程可能并不适合。
+- 涨落数据接近均值为0的高斯分布
+- ...
+
+#### 基于模型的策略制定
