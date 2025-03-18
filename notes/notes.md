@@ -42,6 +42,10 @@ $$
 f(t)=f_0(t)+\xi(t)
 $$
 
+$$
+f(t)=f_0(t)+\zeta(t)
+$$
+
    The fluctuation can be fully discribed by
 
 $$
