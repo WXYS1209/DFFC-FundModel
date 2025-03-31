@@ -330,8 +330,95 @@ $$
 ##### 分析
 - 时间关联函数不是单纯的指数衰减，在20日左右包含小于0的回调部分，可能代表着最佳的操作周期，OU过程可能并不适合。
 - 涨落数据接近均值为0的高斯分布
-- ...
+- 验证真实数据是二阶的，只包含当前值和动量：根据关联函数拟合随机模型参数之后，验证动量-模型项的关联函数，是否为白噪声
+- 是否使用随机差分方程代替随机函数（随机过程），在生成数据&参数拟合上都更好？
 
----
+#### d. 差分格式的谐振子布朗运动
 
-## 3. 制定最优策略 
+$$
+\left\{
+\begin{array}{ll}
+\zeta _{i} - \zeta _{i-1}=\zeta' _{i-1}\\
+\zeta' _{i}-\zeta' _{i-1} =-a \zeta' _{i-1} - b\zeta _{i} +c \xi_{i}\\
+\langle\xi_i\rangle=0\\
+\langle\xi_i\xi_j\rangle=\delta_{i,j}
+\end{array}
+\right.
+$$
+
+隐式&显式区别？
+
+
+化简后递推公式为
+$$
+$$ 
+
+自己想的一个关联函数求解方法，不知道对不对：
+设递推公式为
+
+$$
+a f_{i+1}+bf_{i}+cf_{i-1}=\xi_{i}
+$$
+
+设整数格点时，$f(i)=f_i$，在第$i$项展开有
+
+$$
+f_{i+1}=f(i)+\partial_x f+\frac{1}{2}\partial_{xx}f+\frac{1}{6}\partial_{xxx}f+...
+$$
+
+$$
+f_{i-1}=f(i)-\partial_x f+\frac{1}{2}\partial_{xx}f-\frac{1}{6}\partial_{xxx}f+...
+$$
+
+$$
+\xi_i=\xi(i)
+$$
+
+对$x$进行傅里叶变换，有
+
+$$
+\begin{aligned}
+F[f_{i+1}]&=\tilde{f}(k)\left(1+(ik)+\frac{1}{2}(ik)^2+\frac{1}{6}(ik)^3+...\right)\\
+&=\tilde{f}(k) e^{ik}
+\end{aligned}
+$$
+
+$$
+\begin{aligned}
+F[f_{i-1}]&=\tilde{f}(k)\left(1-(ik)+\frac{1}{2}(ik)^2-\frac{1}{6}(ik)^3+...\right)\\
+&=\tilde{f}(k) e^{-ik}
+\end{aligned}
+$$
+
+原方程化为
+
+$$
+\tilde{f}(k)=\frac{F[\xi_{i}]}{a e^{ik}+b+c e^{-ik}}
+$$
+
+谱密度函数为
+
+$$
+\begin{aligned}
+S(k)&=|\tilde{f}(k)|^2\\
+&=\frac{F[\xi_{i}]^2}{a e^{ik}+b+c e^{-ik}}\\
+&=\frac{1}{a e^{ik}+b+c e^{-ik}}\\
+\end{aligned}
+$$
+
+关联函数
+
+$$
+\begin{aligned}
+C(x)&=\frac{1}{2\pi}\int^\infty_{-\infty} e^{-ikt}S(k)dk\\
+&=
+\end{aligned}
+$$
+
+--- 
+## 3. 策略的制定和优化
+
+依据模型拟合参数生成随机数据最优化
+策略只能由（动量+涨落+参数（历史））决定
+
+机器学习？
