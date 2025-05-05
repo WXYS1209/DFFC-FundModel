@@ -1,2 +1,6 @@
 __pycache__/
 .aider.*
+
+.DS_Store
+
+test_wxy/
