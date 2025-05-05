@@ -34,7 +34,7 @@ class holtwinter(bt.Algo):
         # c. 计算中间变量并记录到target.perm.indicators中
         target.perm['indicators'].loc[current_date,'testindicator1'] = 1
 
-        # 通过中间变量写入每个基金的操作价值进入op_nawcash
+        # 通过中间变量写入每个基金的操作价值进入op_nowcash
         op_nowcash = {"单位净值": 5000}
         # d. 如果是最后一天，则记录在第0天的操作列表中表示你需要的操作
         if current_date == target.data.index[-1]:

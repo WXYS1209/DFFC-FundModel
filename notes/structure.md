@@ -3,7 +3,7 @@
 ```mermaid
 classDiagram
     namespace FundInfos {
-        class BaseFundInfo{
+        class BaseFundInfo {
             code
             name
             fund_type
@@ -12,9 +12,14 @@ classDiagram
         }
     }
 
-    namespace SmoothFuncs {
-        class BaseSmoothFunc
+    namespace Indicators {
+        class BaseIndicator {
+            data
+            fit()
+        }
+        class HoltWintersIndicator
     }
+    BaseIndicator <|-- HoltWintersIndicator
 
     namespace Strategies {
         class BaseStrategy
@@ -27,7 +32,7 @@ classDiagram
     class HoldingStore
 
     class PortfolioTracker
-    
+
     class TradePlanner
 
     namespace PortfolioConstructor {
