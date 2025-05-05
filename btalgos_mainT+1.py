@@ -1,3 +1,4 @@
+# %%
 import pandas as pd
 import bt
 import numpy as np
@@ -108,12 +109,14 @@ result = bt.run(stra_test)
 
 # 5.对计算结果可视化=================================================================================
 # 使用temp.perm['indicators']记录的中间变量
-#print("中间变量记录:")
-#print(stra_test.strategy.perm['operationlist'])
-#print(stra_test.strategy.data)
+print("中间变量记录:")
+print(stra_test.strategy.perm['operationlist'])
+print(stra_test.strategy.data)
+print(stra_test.strategy.get_transactions())
 
 # 使用result.display()和result.plot()查看回测结果
-result.display()
+# result.display()
 #result.plot()
 #import matplotlib.pyplot as plt
 #plt.show()  # 添加此行以显示图形
+# %%
