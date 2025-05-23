@@ -120,13 +120,13 @@ M(t)-U(t)
 $$
 
 ### Result
-The Expectation of Profet
+The Expectation of Profit
 
 $$
 \begin{aligned}
    \langle M-U\rangle&=(a t+1)\cdot \int _0^t \frac{k\langle\xi^2(t')\rangle}{(at'+1)^2}dt'\\
    &=(a t+1)kC(0)\cdot \int _0^t \frac{1}{(at'+1)^2}dt'\\
-   &=a^2kC(0)t\\
+   &=kC(0)t\\
 \end{aligned}
 $$
 
