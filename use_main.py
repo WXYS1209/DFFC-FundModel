@@ -3,21 +3,61 @@ from datetime import datetime
 import numpy as np
 
 # 主执行部分：创建一个 FuncInfo 实例，爬虫加载特定日期范围内的数据
-j = ExtendedFuncInfo(code='011937', name="测试一下名字")
+j = ExtendedFuncInfo(code='008299')
 j.load_net_value_info(datetime(2015, 3, 1), datetime(2030, 9, 20))
 df = j.get_data_frame()
 x_dates = df['净值日期'].iloc[::-1]
-
 #设定下一日的净值估计
-#j.set_next_day_estimate(1.48)
-
+j.set_next_day_estimate(.5)
+holtwinters_result = j.holtwinters(alpha=0.05, beta=0.01, gamma=0.12, season_length=28)
+deltaholtwinters_normal = j.delta_holtwinters(alpha=0.05, beta=0.01, gamma=0.12, season_length=28, normalize=True) #008299
 npdf = j.get_unit_values_list()
+print(j.code ,":",)
+j.operate_info()
+print("")
+
+# 主执行部分：创建一个 FuncInfo 实例，爬虫加载特定日期范围内的数据
+j = ExtendedFuncInfo(code='011937')
+j.load_net_value_info(datetime(2015, 3, 1), datetime(2030, 9, 20))
+df = j.get_data_frame()
+x_dates = df['净值日期'].iloc[::-1]
+#设定下一日的净值估计
+#j.set_next_day_estimate()
 holtwinters_result = j.holtwinters(alpha=0.018, beta=0.055, gamma=0.66, season_length=8)
 deltaholtwinters_normal = j.delta_holtwinters(alpha=0.018, beta=0.055, gamma=0.66, season_length=8, normalize=True) #011937
-#deltaholtwinters_normal = j.delta_holtwinters(alpha=0.05, beta=0.01, gamma=0.12, season_length=28, normalize=True) #008299
-#deltaholtwinters_normal = j.delta_holtwinters(alpha=0.05, beta=0.005, gamma=0.14, season_length=23, normalize=True) #008087
-#deltaholtwinters_normal = j.delta_holtwinters(alpha=0.055, beta=0.005, gamma=0.13, season_length=23, normalize=True) #008888
-print(j.operate_info())
+npdf = j.get_unit_values_list()
+print(j.code ,":",)
+j.operate_info()
+print("")
+
+
+# 主执行部分：创建一个 FuncInfo 实例，爬虫加载特定日期范围内的数据
+j = ExtendedFuncInfo(code='008087')
+j.load_net_value_info(datetime(2015, 3, 1), datetime(2030, 9, 20))
+df = j.get_data_frame()
+x_dates = df['净值日期'].iloc[::-1]
+#设定下一日的净值估计
+#j.set_next_day_estimate()
+holtwinters_result = j.holtwinters(alpha=0.05, beta=0.005, gamma=0.14, season_length=23)
+deltaholtwinters_normal = j.delta_holtwinters(alpha=0.05, beta=0.005, gamma=0.14, season_length=23, normalize=True) #008087
+npdf = j.get_unit_values_list()
+print(j.code ,":",)
+j.operate_info()
+print("")
+
+# 主执行部分：创建一个 FuncInfo 实例，爬虫加载特定日期范围内的数据
+j = ExtendedFuncInfo(code='008888')
+j.load_net_value_info(datetime(2015, 3, 1), datetime(2030, 9, 20))
+df = j.get_data_frame()
+x_dates = df['净值日期'].iloc[::-1]
+#设定下一日的净值估计
+#j.set_next_day_estimate()
+holtwinters_result = j.holtwinters(alpha=0.055, beta=0.005, gamma=0.13, season_length=23)
+deltaholtwinters_normal = j.delta_holtwinters(alpha=0.055, beta=0.005, gamma=0.13, season_length=23, normalize=True) #008888
+npdf = j.get_unit_values_list()
+print(j.code ,":",)
+j.operate_info()
+print("")
 
 # 新增代码：计算 deltaholtwinters 的概率密度分布并画图显示
 pdf_delta = j.compute_pdf(deltaholtwinters_normal, 20)  # 50个分箱

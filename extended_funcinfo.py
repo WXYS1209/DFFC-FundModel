@@ -1,4 +1,5 @@
 from fund_info import FuncInfo
+import pandas as pd
 import numpy as np
 
 class ExtendedFuncInfo(FuncInfo):
@@ -9,6 +10,7 @@ class ExtendedFuncInfo(FuncInfo):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.next_day_estimate = -1.0  # 新增属性：下一日净值的估计
+        self.Factor = pd.DataFrame()  # 新增属性：存储因子数据
         self.info_dict = {}          # 新增属性：存储信息的字典
 
     def get_unit_values_list(self) -> np.ndarray:
