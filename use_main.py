@@ -1,105 +1,200 @@
 from extended_funcinfo import ExtendedFuncInfo
 from datetime import datetime
 import numpy as np
+import matplotlib.pyplot as plt
 
-# 主执行部分：创建一个 FuncInfo 实例，爬虫加载特定日期范围内的数据
-j = ExtendedFuncInfo(code='008299')
-j.load_net_value_info(datetime(2015, 3, 1), datetime(2030, 9, 20))
-df = j.get_data_frame()
-x_dates = df['净值日期'].iloc[::-1]
-#设定下一日的净值估计
-j.set_next_day_estimate(.5)
-holtwinters_result = j.holtwinters(alpha=0.05, beta=0.01, gamma=0.12, season_length=28)
-deltaholtwinters_normal = j.delta_holtwinters(alpha=0.05, beta=0.01, gamma=0.12, season_length=28, normalize=True) #008299
-npdf = j.get_unit_values_list()
-print(j.code ,":",)
-j.operate_info()
-print("")
+# 定义通用绘图函数
+def plot_fund(fund):
+    plt.figure(figsize=(12, 6))
+    plt.plot(fund._date_ls, fund._unit_value_ls, label='Original Unit Values', color='blue', linewidth=1)
+    plt.plot(fund._date_ls, fund.factor_holtwinters, label='HoltWinters Smoothed', color='red', linewidth=1)
+    plt.plot(fund._date_ls, fund.factor_holtwinters_delta_percentage,
+             label='HoltWinters Delta Percentage', color='green', linewidth=1)
+    # 添加估计值点和注释
+    if hasattr(fund, 'estimate_value') and fund.estimate_value is not None:
+        plt.scatter([fund.estimate_datetime], [fund.estimate_value],
+                   color='orange', s=20, marker='o', zorder=5, edgecolors='black', linewidth=2,
+                   label=f'Estimate Value: {fund.estimate_value:.4f}')
+        plt.annotate(f'Est: {fund.estimate_value:.4f}',
+                     xy=(fund.estimate_datetime, fund.estimate_value),
+                     xytext=(10, 10), textcoords='offset points',
+                     bbox=dict(boxstyle='round,pad=0.3', facecolor='orange', alpha=0.7),
+                     fontsize=10)
+    if hasattr(fund, 'factor_holtwinters_estimate') and fund.factor_holtwinters_estimate is not None:
+        plt.scatter([fund.estimate_datetime], [fund.factor_holtwinters_estimate],
+                   color='purple', s=20, marker='s', zorder=5, edgecolors='black', linewidth=2,
+                   label=f'HW Estimate: {fund.factor_holtwinters_estimate:.4f}')
+        plt.annotate(f'HW Est: {fund.factor_holtwinters_estimate:.4f}',
+                     xy=(fund.estimate_datetime, fund.factor_holtwinters_estimate),
+                     xytext=(10, -10), textcoords='offset points',
+                     bbox=dict(boxstyle='round,pad=0.3', facecolor='purple', alpha=0.7),
+                     fontsize=10, color='white')
+    plt.title(f'Fund {fund.code}: Original vs HoltWinters Smoothed Values')
+    plt.xlabel('Date')
+    plt.ylabel('Unit Value')
+    plt.legend()
+    plt.xticks(rotation=45)
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.show()
 
-# 主执行部分：创建一个 FuncInfo 实例，爬虫加载特定日期范围内的数据
-j = ExtendedFuncInfo(code='011937')
-j.load_net_value_info(datetime(2015, 3, 1), datetime(2030, 9, 20))
-df = j.get_data_frame()
-x_dates = df['净值日期'].iloc[::-1]
-#设定下一日的净值估计
-#j.set_next_day_estimate()
-holtwinters_result = j.holtwinters(alpha=0.018, beta=0.055, gamma=0.66, season_length=8)
-deltaholtwinters_normal = j.delta_holtwinters(alpha=0.018, beta=0.055, gamma=0.66, season_length=8, normalize=True) #011937
-npdf = j.get_unit_values_list()
-print(j.code ,":",)
-j.operate_info()
-print("")
 
+# 新增打印函数，用于命令行输出 fund 的 info_dict
+def print_fund_info(fund):
+    fund.set_info_dict()
+    for key, value in fund.info_dict.items():
+        print(f"{key}: {value}")
 
-# 主执行部分：创建一个 FuncInfo 实例，爬虫加载特定日期范围内的数据
-j = ExtendedFuncInfo(code='008087')
-j.load_net_value_info(datetime(2015, 3, 1), datetime(2030, 9, 20))
-df = j.get_data_frame()
-x_dates = df['净值日期'].iloc[::-1]
-#设定下一日的净值估计
-#j.set_next_day_estimate()
-holtwinters_result = j.holtwinters(alpha=0.05, beta=0.005, gamma=0.14, season_length=23)
-deltaholtwinters_normal = j.delta_holtwinters(alpha=0.05, beta=0.005, gamma=0.14, season_length=23, normalize=True) #008087
-npdf = j.get_unit_values_list()
-print(j.code ,":",)
-j.operate_info()
-print("")
+# 上证综指 ===============================================================
+print("==========================================================")
+fundmain = ExtendedFuncInfo(code='011320', name='国泰上证综指ETF联接')
+fundmain.factor_holtwinters_parameter = {'alpha': 0.1018, 'beta': 0.00455, 'gamma': 0.0861, 'season_length': 13}
+fundmain.factor_cal_holtwinters()
+fundmain.factor_cal_holtwinters_delta_percentage()
+fundmain.set_info_dict()
+print_fund_info(fundmain)
 
-# 主执行部分：创建一个 FuncInfo 实例，爬虫加载特定日期范围内的数据
-j = ExtendedFuncInfo(code='008888')
-j.load_net_value_info(datetime(2015, 3, 1), datetime(2030, 9, 20))
-df = j.get_data_frame()
-x_dates = df['净值日期'].iloc[::-1]
-#设定下一日的净值估计
-#j.set_next_day_estimate()
-holtwinters_result = j.holtwinters(alpha=0.055, beta=0.005, gamma=0.13, season_length=23)
-deltaholtwinters_normal = j.delta_holtwinters(alpha=0.055, beta=0.005, gamma=0.13, season_length=23, normalize=True) #008888
-npdf = j.get_unit_values_list()
-print(j.code ,":",)
-j.operate_info()
-print("")
-
-# 新增代码：计算 deltaholtwinters 的概率密度分布并画图显示
-pdf_delta = j.compute_pdf(deltaholtwinters_normal, 20)  # 50个分箱
-
-# 绘图部分========================================================================================================
-
-# 新增代码：绘图比较 npdf 与 holtwinters_result（简单清晰的折线图）
-import matplotlib.pyplot as plt  # 如果之前没导入过
-# 修改后的绘图代码：两张图上下排列，线细一些，deltaplot包含 y=0 横线
-fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
-# 上方图：使用日期作为横坐标
-ax1.plot(x_dates, npdf, label='Original Data', color='blue', linewidth=1)
-ax1.plot(x_dates, holtwinters_result, label='HoltWinters Result', color='red', linewidth=1)
-ax1.set_title('Original vs HoltWinters')
-ax1.set_ylabel('Value')
-ax1.legend()
-
-# 下方图：使用相同的日期作为横坐标
-ax2.plot(x_dates, deltaholtwinters_normal, label='Delta', color='green', linewidth=1)
-ax2.axhline(0, color='black', linewidth=0.8)  # 添加 y=0 的横轴
-ax2.set_title('Delta Plot')
-ax2.set_xlabel('Date')
-ax2.set_ylabel('Delta Value')
-ax2.legend()
-
-# 设置x轴刻度：每隔100个显示一个日期，并确保显示最后一个日期
-import numpy as np
-tick_indices = np.arange(0, len(x_dates), 100)
-if tick_indices[-1] != len(x_dates)-1:
-    tick_indices = np.append(tick_indices, len(x_dates)-1)
-ax1.set_xticks(tick_indices)
-ax1.set_xticklabels(x_dates.iloc[tick_indices], rotation=45)
-ax2.set_xticks(tick_indices)
-ax2.set_xticklabels(x_dates.iloc[tick_indices], rotation=45)
-
+backtest_main, buylist = fundmain.cal_backtest()
+# 绘制 fundmain 单位净值与回测资金曲线
+plt.figure(figsize=(12, 6))
+dates_bt = fundmain._date_ls  # 对应回测结果的日期，去掉最后一个
+plt.plot(fundmain._date_ls, fundmain._unit_value_ls, label='Unit Value', color='blue', linewidth=1)
+plt.plot(dates_bt, backtest_main, label='Backtest Equity Curve', color='orange', linewidth=1)
+plt.title(f'Fund {fundmain.code}: Unit Value vs Backtest')
+plt.xlabel('Date')
+plt.ylabel('Value')
+plt.legend()
+plt.xticks(rotation=45)
+plt.grid(True, alpha=0.3)
 plt.tight_layout()
 plt.show()
 
-plt.figure(figsize=(8, 6))
-plt.plot(pdf_delta[0, :], pdf_delta[1, :], label='PDF of Delta', color='purple', linewidth=1)
-plt.title('Probability Density of Delta')
-plt.xlabel('Delta Value')
-plt.ylabel('Density')
+# 新图：在净值曲线上标注买入卖出点
+plt.figure(figsize=(12,6))
+dates = fundmain._date_ls[:-1]  # 忽略最后一个与回测结果不对应的日期
+unit_vals = fundmain._unit_value_ls[:-1]
+plt.plot(dates, unit_vals, label='Unit Value', color='blue')
+# 标注买入点
+buy_dates = [fundmain._date_ls[i] for i, sig in enumerate(buylist) if sig == 1]
+buy_vals = [fundmain._unit_value_ls[i] for i, sig in enumerate(buylist) if sig == 1]
+plt.scatter(buy_dates, buy_vals, marker='^', color='green', label='Buy', zorder=5)
+# 标注卖出点
+sell_dates = [fundmain._date_ls[i] for i, sig in enumerate(buylist) if sig == -1]
+sell_vals = [fundmain._unit_value_ls[i] for i, sig in enumerate(buylist) if sig == -1]
+plt.scatter(sell_dates, sell_vals, marker='v', color='red', label='Sell', zorder=5)
+plt.title(f'Fund {fundmain.code}: Buy/Sell Signals on Unit Value')
+plt.xlabel('Date')
+plt.ylabel('Unit Value')
 plt.legend()
+plt.xticks(rotation=45)
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
 plt.show()
+
+# 华夏中证银行etf联接C ===============================================================
+print("==========================================================")
+fund1 = ExtendedFuncInfo(code='008299', name='华夏中证银行ETF联接C', estimate_info = {'code': '512730', 'type': 'fund'})
+fund1.factor_holtwinters_parameter = {'alpha': 0.0721, 'beta': 0.00939, 'gamma': 0.0398, 'season_length': 9}
+fund1.factor_cal_holtwinters()
+fund1.factor_cal_holtwinters_delta_percentage()
+fund1.set_info_dict()
+print_fund_info(fund1)
+
+# 黄金ETF联接C ============================================================
+print("==========================================================")
+fundgold = ExtendedFuncInfo(code='004253', name='国泰黄金ETF联接C', estimate_info = {'code': '518880', 'type': 'fund'})
+fundgold.factor_holtwinters_parameter = {'alpha': 0.111, 'beta': 0.00609, 'gamma': 0.0277, 'season_length': 14}
+fundgold.factor_cal_holtwinters()
+fundgold.factor_cal_holtwinters_delta_percentage()
+fundgold.set_info_dict()
+print_fund_info(fundgold)
+
+
+# 5G ETF联接C ============================================================
+print("==========================================================")
+fund5g = ExtendedFuncInfo(code='008087', name='华夏5G通信ETF联接C',estimate_info = {'code': '515050', 'type': 'fund'})
+fund5g.factor_holtwinters_parameter = {'alpha': 0.100, 'beta': 0.00539, 'gamma': 0.0451, 'season_length': 10}    
+fund5g.factor_cal_holtwinters()
+fund5g.factor_cal_holtwinters_delta_percentage()
+fund5g.set_info_dict()
+print_fund_info(fund5g)
+
+
+# 华夏alpha精选 ============================================================
+print("==========================================================")
+fundalpha = ExtendedFuncInfo(code='011937', name='华夏阿尔法精选混合')
+fundalpha.factor_holtwinters_parameter = {'alpha': 0.0740, 'beta': 0.0281, 'gamma': 0.415, 'season_length': 14}    
+fundalpha.factor_cal_holtwinters()
+fundalpha.factor_cal_holtwinters_delta_percentage()
+fundalpha.set_info_dict()
+print_fund_info(fundalpha)
+
+# 大摩数字经济 ============================================================
+print("==========================================================")
+funddigital = ExtendedFuncInfo(code='017102', name='大摩数字经济混合')
+funddigital.factor_holtwinters_parameter = {'alpha': 0.0756, 'beta': 0.0195, 'gamma': 0.174, 'season_length': 14}    
+funddigital.factor_cal_holtwinters()
+funddigital.factor_cal_holtwinters_delta_percentage()
+funddigital.set_info_dict()
+print_fund_info(funddigital)
+
+
+# 纳斯达克 ============================================================
+print("==========================================================")
+fundnsdk = ExtendedFuncInfo(code='017437', name='华宝纳斯达克100ETF联接C')
+fundnsdk.factor_holtwinters_parameter = {'alpha': 0.141, 'beta': 0.0105, 'gamma': 0.0840, 'season_length': 23}    
+fundnsdk.factor_cal_holtwinters()
+fundnsdk.factor_cal_holtwinters_delta_percentage()
+fundnsdk.set_info_dict()
+print_fund_info(fundnsdk)
+
+# 华夏低波红利ETF联接C ============================================================
+print("==========================================================")
+funddb = ExtendedFuncInfo(code='021483', name='华夏低波红利ETF联接C', estimate_info = {'code': '159547', 'type': 'fund'})
+funddb.factor_holtwinters_parameter = {'alpha': 0.0842, 'beta': 0.0121, 'gamma': 0.223, 'season_length': 22}    
+funddb.factor_cal_holtwinters()
+funddb.factor_cal_holtwinters_delta_percentage()
+funddb.set_info_dict()
+print_fund_info(funddb)
+
+
+# 鹏华 ============================================================
+print("==========================================================")
+fundph = ExtendedFuncInfo(code='012997', name='鹏华优选汇报灵活配置混合C')
+fundph.factor_holtwinters_parameter = {'alpha': 0.1278, 'beta': 0.00807, 'gamma': 0.1861, 'season_length': 16}    
+fundph.factor_cal_holtwinters()
+fundph.factor_cal_holtwinters_delta_percentage()
+fundph.set_info_dict()
+print_fund_info(fundph)
+
+
+# 华夏债券 ============================================================
+print("==========================================================")
+zhai = ExtendedFuncInfo(code='013360', name='华夏磐泰混合(LOF)')
+zhai.factor_holtwinters_parameter = {'alpha': 0.1129, 'beta': 0.00959, 'gamma': 0.186, 'season_length': 17}    
+zhai.factor_cal_holtwinters()
+zhai.factor_cal_holtwinters_delta_percentage()
+zhai.set_info_dict()
+print_fund_info(zhai)
+
+# 通金融 ============================================================
+print("==========================================================")
+ganggu = ExtendedFuncInfo(code='020423', name='华夏中证港股通内地金融ETF联接C', estimate_info = {'code': '513190', 'type': 'fund'})
+ganggu.factor_holtwinters_parameter = {'alpha': 0.05416, 'beta': 0.01629, 'gamma': 0.1183, 'season_length': 24}    
+ganggu.factor_cal_holtwinters()
+ganggu.factor_cal_holtwinters_delta_percentage()
+ganggu.set_info_dict()
+print_fund_info(ganggu)
+
+
+# 诺安 ============================================================
+print("==========================================================")
+nuoanduocelue = ExtendedFuncInfo(code='320016', name='诺安多策略混合')
+nuoanduocelue.factor_holtwinters_parameter = {'alpha': 0.05, 'beta': 0.02, 'gamma': 0.1, 'season_length': 24}    
+nuoanduocelue.factor_cal_holtwinters()
+nuoanduocelue.factor_cal_holtwinters_delta_percentage()
+nuoanduocelue.set_info_dict()
+print_fund_info(nuoanduocelue)
+# 绘制fund1的数据对比图
+print("==========================================================")
+plot_fund(nuoanduocelue)

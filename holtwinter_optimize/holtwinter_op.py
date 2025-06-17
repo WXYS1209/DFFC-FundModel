@@ -5,6 +5,9 @@ import scipy.optimize as opt
 from tqdm import tqdm
 from concurrent.futures import ProcessPoolExecutor, as_completed  # 新增导入
 
+# 添加均线窗口大小设置
+MOVING_AVERAGE_WINDOW = 30
+
 # %%
 # 新增函数：导入CSV数据，返回单位净值列的numpy数组
 def get_unit_nav_numpy(path):
@@ -126,7 +129,7 @@ def calc_RSS(fluc_A, fluc_B, scaling_factor):
     return rss
 
 # 目标函数：给定参数 (alpha, beta, gamma)，以及外部的 season_length (current_season)
-def objective(params, arr, season_length, data_begindate):
+def objective(params, arr, season_length, data_begindate, fluc_data):
     alpha, beta, gamma = params
     # 使用 Holt-Winters 滚动平滑，注意函数内部对于数据不足一个周期的处理
     holtwinters_data = holtwinters_rolling(arr, alpha, beta, gamma, season_length=season_length)
@@ -154,8 +157,8 @@ def optimize_holtwinters_parameters(original_data, holtwinters_begindate, holtwi
       best_season: 最佳季节长度
       best_rss: 最小残差平方和
     """
-    # 在函数内计算波动数据
-    mean_data = sliding_average(original_data, 50)
+    # 在函数内计算波动数据，使用设定的均线窗口
+    mean_data = sliding_average(original_data, MOVING_AVERAGE_WINDOW)
     fluc_data = original_data - mean_data
 
     best_rss = np.inf
@@ -165,12 +168,12 @@ def optimize_holtwinters_parameters(original_data, holtwinters_begindate, holtwi
     options = {
         'ftol': 1e-9,
         'gtol': 1e-6,
-        'maxiter': 1000,
+        'maxiter': 10000,
         'maxfun': 10000,
         'disp': True
     }
 
-    for season in range(7, 15):
+    for season in range(7, 25):
         initial_guess = [0.05, 0.01, 0.2]
         bounds = [(0.0001, 0.5), (0.0001, 0.5), (0.0001, 1.0)]
 
@@ -211,13 +214,13 @@ def compute_optimize_result(end_day, original_data):
 # %%
 # 测试新函数（仅供调试，可删除）
 if __name__ == "__main__":
-    original_data = np.flip(get_unit_nav_numpy("./csv_data/008299.csv"))
-    mean_data = sliding_average(original_data, 50)  # 计算滑动平均
+    original_data = np.flip(get_unit_nav_numpy("./csv_data/013360.csv"))
+    mean_data = sliding_average(original_data, MOVING_AVERAGE_WINDOW)  # 使用设定的均线窗口
 
     # 设置可调并行线程数
-    max_workers = 12  # 根据需要调整线程数
+    max_workers = 10  # 根据需要调整线程数
 
-    end_days = list(range(-600, 0, 50))
+    end_days = list(range(-400, 0, 40))
     if -1 not in end_days:
         end_days.append(-1)
     results = []
@@ -229,7 +232,7 @@ if __name__ == "__main__":
             print(f"end_day={result['end_day']}, 参数: {[result['alpha'], result['beta'], result['gamma']]}, season={result['season']}, rss={result['rss']}")
     
     results_df = pd.DataFrame(results)
-    results_df.to_csv("./holtwinters_results.csv", index=False)
+    results_df.to_csv("./holtwinters_results_013360_30.csv", index=False)
     
     # 绘图部分，使用最后一次优化的结果
     import matplotlib.pyplot as plt  # 如果已导入则忽略

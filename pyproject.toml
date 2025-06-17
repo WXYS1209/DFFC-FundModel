@@ -10,4 +10,9 @@ dependencies = [
     "pandas>=2.2.3",
     "statsmodels>=0.14.4",
     "talipp>=2.4.1",
+    "requests>=2.31.0",
+    "beautifulsoup4>=4.12.0",
+    "lxml>=4.9.0",
+    "numpy>=1.24.0",
+    "PyQt5>=5.15.0"
 ]

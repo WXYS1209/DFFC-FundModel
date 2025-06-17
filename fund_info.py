@@ -14,11 +14,11 @@ class FuncInfo(object):
         self._unit_value_ls = []                   # 单位净值list
         self._cumulative_value_ls = []             # 累计净值list
         self._daily_growth_rate_ls = []            # 日增长率
-        self._date_ls = []                         # 交易日list
         self._purchase_state_ls = []               # 申购状态
         self._redemption_state_ls = []             # 赎回状态
         self._bonus_distribution_ls = []           # 分红送配
-        self._date2idx_map = {}                    # 交易日 -> 单位净值list/累计净值list.. idx
+        self._date_ls = []                         # 交易日list (datetime类型)
+        self._date2idx_map = {}                    # 交易日 -> 单位净值list/累计净值list.. idx(字典类型，键为字符串格式的日期)
 
     def clear_data(self):
         # 清除所有存储的数据
@@ -26,6 +26,9 @@ class FuncInfo(object):
         self._cumulative_value_ls = []
         self._daily_growth_rate_ls = []
         self._date_ls = []
+        self._purchase_state_ls = []
+        self._redemption_state_ls = []
+        self._bonus_distribution_ls = []
         self._date2idx_map = {}
 
     @staticmethod
@@ -39,7 +42,8 @@ class FuncInfo(object):
 
     def _date3idx(self, date):
         # 将日期映射到存储数据列表中的索引
-        date = self._parse_date(date, "%Y-%m-%d")
+        if isinstance(date, datetime):
+            date = date.strftime("%Y-%m-%d")
         return self._date2idx_map.get(date)
 
     def get_unit_value(self, date):
@@ -103,12 +107,14 @@ class FuncInfo(object):
                         break
                     dict_data = dict(zip(th_list, values))
                     # fp.write("%s\n" % dict_data)
-                    date = dict_data.get("净值日期")
-                    if date and not self._date2idx_map.get(date):
-                        self._date2idx_map[dict_data.get("净值日期")] = len(self._unit_value_ls)
+                    date_str = dict_data.get("净值日期")
+                    if date_str and not self._date2idx_map.get(date_str):
+                        self._date2idx_map[date_str] = len(self._unit_value_ls)
                         self._unit_value_ls.append(dict_data.get("单位净值"))
                         self._cumulative_value_ls.append(dict_data.get("累计净值"))
-                        self._date_ls.append(date)
+                        # 将日期字符串转换为datetime对象
+                        date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+                        self._date_ls.append(date_obj)
                         self._purchase_state_ls.append(dict_data.get("申购状态"))
                         self._redemption_state_ls.append(dict_data.get("赎回状态"))
                         self._bonus_distribution_ls.append(dict_data.get("分红送配"))
@@ -119,7 +125,7 @@ class FuncInfo(object):
         # 将存储的数据转换为 pandas DataFrame，以便进一步分析或导出
         date_list = self._date_ls
         df = pd.DataFrame({
-            "净值日期": date_list,
+            "净值日期": date_list,  # 现在是datetime类型
             "单位净值": [self.get_unit_value(date) for date in date_list],
             "累计净值": [self.get_cumulative_value(date) for date in date_list],
             "日增长率": [self.get_daily_growth_rate(date) for date in date_list],
@@ -132,9 +138,9 @@ class FuncInfo(object):
 
 if __name__ == '__main__':
     # 主执行部分：创建一个 FuncInfo 实例，加载特定日期范围内的数据，打印一些值，并将数据导出到CSV文件
-    j = FuncInfo(code=161725, name="招商中证白酒指数分级")
-    j.load_net_value_info(datetime(2018, 9, 1), datetime(2019, 9, 20))
+    j = FuncInfo(code='320016', name="")
+    j.load_net_value_info(datetime(2000, 9, 1), datetime(2029, 9, 20))
     date = "2019-09-20"
     print(j.get_unit_value(date), j.get_cumulative_value(date), j.get_daily_growth_rate(date))
     df = j.get_data_frame()
-    df.to_csv("./161725招商中证白酒指数分级.csv")
+    df.to_csv("./320016.csv")

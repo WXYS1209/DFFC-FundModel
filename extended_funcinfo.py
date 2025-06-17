@@ -1,31 +1,147 @@
 from fund_info import FuncInfo
 import pandas as pd
 import numpy as np
+from datetime import datetime
+from stock_net_value_crawler import StockNetValueCrawler
 
 class ExtendedFuncInfo(FuncInfo):
     """
     扩展FuncInfo类，新增方法用于处理单位净值数据，
     例如计算HoltWinters平滑、差分以及概率密度分布。
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, estimate_info={'code': '', 'type': ''}, *args, **kwargs, ):
         super().__init__(*args, **kwargs)
-        self.next_day_estimate = -1.0  # 新增属性：下一日净值的估计
-        self.Factor = pd.DataFrame()  # 新增属性：存储因子数据
         self.info_dict = {}          # 新增属性：存储信息的字典
 
-    def get_unit_values_list(self) -> np.ndarray:
-        """
-        获取单位净值数据，转换为numpy数组并反转顺序。
-        """
-        df = self.get_data_frame()
-        return (df['单位净值'].astype(float)).to_numpy()[::-1]
+        # 初始化时爬虫加载数据
+        self.load_net_value_info(datetime(2000, 1, 1), datetime(2050, 9, 20))
 
-    def holtwinters(self, alpha: float, beta: float, gamma: float, season_length: int) -> np.ndarray:
+        # 使用的因子参数
+        self.factor_holtwinters_parameter=None
+        self.factor_holtwinters=[]
+        self.factor_holtwinters_delta=[]
+        self.factor_holtwinters_delta_percentage = []
+        self.factor_holtwinters_estimate = None
+        self.factor_holtwinters_estimate_delta = None
+        self.factor_holtwinters_estimate_delta_percentage = None
+        self.factor_CMA30 = None
+        self.factor_fluctuationrateCMA30 = None
+
+        # 从某个ETF抓取当日估值信息
+        self.estimate_info = estimate_info  # 新增属性：存储估计信息
+        self.estimate_datetime = None  # 新增属性：存储估计日期时间
+        self.estimate_changepercent = None  # 新增属性：存储估计涨跌幅
+        self.estimate_value = None  # 新增属性：存储估计值
+        self.estimate_isupdate = True  # 新增属性：是否为今天的估计值
+        self._unit_value_ls = [float(x) for x in self._unit_value_ls]  # 确保单位净值列表为浮点数
+
+        # 计算相关因子和初始化函数
+        self.get_nextday_estimate() # 获取下一日估计值
+        self.factor_CMA30 = self.factor_cal_CMA(30)  # 计算30日中心移动平均
+        self.factor_fluctuationrateCMA30 = self.factor_cal_fluctuationrateCMA30()  # 计算波动率比率
+
+    #打印info_dict内容设置输出字典
+    def set_info_dict(self):
         """
-        对单位净值数据进行HoltWinters平滑。
-        返回与数据等长的平滑结果数组。
+        设置info_dict字典，包含当前实例的关键信息。
         """
-        arr = self.get_unit_values_list()
+        self.info_dict = {
+            'code': self.code,
+            'name': self.name,
+            'estimate_isupdate': self.estimate_isupdate if self.estimate_info['code'] != '' else None,
+            'estimate_date': self.estimate_datetime.strftime('%Y-%m-%d') if self.estimate_info['code'] != '' else None,
+            'estimate_changepercent': self.estimate_changepercent if self.estimate_info['code'] != '' else None,
+            'factor_holtwinters_estimate_delta_percentage': self.factor_holtwinters_estimate_delta_percentage,
+            'now_date': self._date_ls[0].strftime('%Y-%m-%d'),
+            'now_changepercent': float((self._daily_growth_rate_ls[0])[:-1]),#self._daily_growth_rate_ls[0],
+            'now_holtwinters_delta_percentage': self.factor_holtwinters_delta_percentage[0],
+            'factor_fluctuationrateCMA30': self.factor_fluctuationrateCMA30
+        }
+
+    def get_nextday_estimate(self):
+        # 检查 estimate_info 是否为 None
+        if self.estimate_info is None:
+            self.estimate_info = {'code': '', 'type': '', 'date': '', 'estimate': 0}
+        
+        if self.estimate_info['code'] != '' and self.estimate_info['type'] != '':
+            crawler = StockNetValueCrawler()
+            data = crawler.get_single_data(self.estimate_info['code'], self.estimate_info['type'])
+            if data:
+                # 将字符串时间转换为datetime对象，只保留年月日
+                if isinstance(data['update_time'], str):
+                    # 尝试不同的时间格式
+                    time_str = data['update_time']
+                    try:
+                        dt = datetime.strptime(time_str, '%Y-%m-%d %H:%M:%S')
+                    except ValueError:
+                        try:
+                            dt = datetime.strptime(time_str, '%Y-%m-%d %H:%M')
+                        except ValueError:
+                            dt = datetime.strptime(time_str, '%Y-%m-%d')
+                    self.estimate_datetime = dt
+                else:
+                    self.estimate_datetime = data['update_time']
+                self.estimate_changepercent = data['change_percent']
+                if self.estimate_datetime.date() == self._date_ls[0].date():
+                    # 如果估计日期与数据的第一天相同，则使用第一天的单位净值作为估计值
+                    self.estimate_isupdate = True
+                else:
+                    self.estimate_isupdate = False
+                    self.estimate_value = self._unit_value_ls[0] * (1 + 0.01 * self.estimate_changepercent)
+
+    def factor_cal_CMA(self, windowsize):
+        """
+        计算中心移动平均（Central Moving Average）
+        使用指定的窗口大小计算滑动平均，窗口居中
+        前后无法计算的部分填充None
+        
+        Args:
+            windowsize (int): 窗口大小
+            
+        Returns:
+            list: 与 self._unit_value_ls 相同长度的数组，包含CMA结果
+        """
+        data = self._unit_value_ls
+        n = len(data)
+        result = [None] * n
+        # 计算窗口的半径（前后各取多少个点）
+        half_window = windowsize // 2
+        # 计算中心移动平均
+        for i in range(half_window, n - half_window):
+            # 对于奇数窗口大小，窗口完全对称
+            # 对于偶数窗口大小，左边少取一个点
+            if windowsize % 2 == 1:
+                # 奇数窗口：左右各取 half_window 个点
+                window_data = data[i - half_window:i + half_window + 1]
+            else:
+                # 偶数窗口：左边取 half_window-1 个点，右边取 half_window 个点
+                window_data = data[i - half_window + 1:i + half_window + 1]
+            result[i] = sum(window_data) / len(window_data)
+        return result
+
+    def factor_cal_holtwinters(self) -> None:
+        """
+        使用 self._unit_value_ls 和 factor_holtwinters_parameter 计算 HoltWinters 平滑。
+        结果保存到 self.factor_holtwinters 中。
+        如果 estimate_isupdate=False，将 estimate_value 加入计算，
+        当前日结果存储在 factor_holtwinters_estimate 中。
+        """
+        if not self.factor_holtwinters_parameter:
+            raise ValueError("factor_holtwinters_parameter 未设置")
+        alpha = self.factor_holtwinters_parameter['alpha']
+        beta = self.factor_holtwinters_parameter['beta'] 
+        gamma = self.factor_holtwinters_parameter['gamma']
+        season_length = self.factor_holtwinters_parameter['season_length']
+        
+        # 准备计算用的数组
+        if not self.estimate_isupdate and self.estimate_value is not None:
+            # 在最前面插入估计值
+            temp_unit_value_ls = [self.estimate_value] + self._unit_value_ls
+        else:
+            temp_unit_value_ls = self._unit_value_ls
+        
+        # 将数组转换为 numpy 数组并反转
+        arr = np.array(temp_unit_value_ls, dtype=float)[::-1]
         n = len(arr)
         smoothed = np.zeros(n)
         
@@ -53,61 +169,118 @@ class ExtendedFuncInfo(FuncInfo):
                     seasonal[seasonal_index] = gamma * (prefix[i] - level) + (1 - gamma) * seasonal[seasonal_index]
                 fitted = level + trend + seasonal[(len(prefix)-m) % m]
                 smoothed[t] = fitted
-        return smoothed
-
-    def delta_holtwinters(self, alpha: float, beta: float, gamma: float, season_length: int, normalize: bool = False) -> np.ndarray:
-        """
-        计算单位净值数据与HoltWinters平滑结果的差值（delta）。
-        当normalize为True时，使用最近50个单位净值均值归一化delta。
-        """
-        arr = self.get_unit_values_list()
-        hw = self.holtwinters(alpha, beta, gamma, season_length)
-        delta = arr - hw
-        if normalize:
-            mean_last50 = np.mean(arr[-50:])
-            delta = delta / mean_last50
-        self.info_dict["delta_holtwinters"] = delta[-1]  # 保存delta的最后一个值到字典中
-        # 计算delta[-1]大于整个delta数组中其他元素的百分比
-        percent = (np.sum(delta < delta[-1]) / len(delta)) * 100
-        percent = (percent-50.)*2 # 将百分比转换为[-100, 100]的范围
-        self.info_dict["delta_holtwinters_percent"] = percent
-        return delta
-
-    def compute_pdf(self, ts: np.ndarray, boxn: int) -> np.ndarray:
-        """
-        输入时间序列numpy数组，输出概率密度分布的2×boxn矩阵。
-        第一行为箱子中心值（从最大到最小），第二行为对应的概率密度值。
-        """
-        ts = np.asarray(ts, dtype=float)
-        ts_min = ts.min()
-        ts_max = ts.max()
-        bins = np.linspace(ts_min, ts_max, boxn+1)
-        hist, bin_edges = np.histogram(ts, bins=bins, density=True)
-        bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
-        bin_centers = bin_centers[::-1]
-        hist = hist[::-1]
-        return np.vstack((bin_centers, hist))
-
-    def set_next_day_estimate(self, value: float, is_percentage: bool = True) -> None:
-        """
-        设置下一日净值的估计值。
-        如果 is_percentage 为 True，则按照公式：
-            next_day_estimate = 当前最后一个净值 * (1 + 0.01 * value)
-        如果 is_percentage 为 False，则直接使用 value 作为下一日净值的估计值。
-        同时，将该值插入 self._unit_value_ls 列表最前端。
-        """
-        if is_percentage:
-            current_last = self.get_unit_values_list()[-1]
-            new_value = current_last * (1 + 0.01 * value)
+        
+        # 根据是否有估计值来分配结果，注意要反转回来
+        if not self.estimate_isupdate and self.estimate_value is not None:
+            # 有估计值时，第一个元素是当前日的估计结果（反转后）
+            smoothed_reversed = smoothed[::-1]
+            self.factor_holtwinters_estimate = smoothed_reversed[0]
+            self.factor_holtwinters = smoothed_reversed[1:].tolist()
+            self.factor_holtwinters_estimate_delta = self.factor_holtwinters_estimate - self.estimate_value
         else:
-            new_value = value
-        self.next_day_estimate = new_value
-        self._unit_value_ls.insert(0, new_value)
+            # 没有估计值时，所有结果都存储在 factor_holtwinters 中，需要反转
+            self.factor_holtwinters_estimate = None
+            self.factor_holtwinters = smoothed[::-1].tolist()
+        
+        # 计算差分
+        self.factor_holtwinters_delta = (np.array(self._unit_value_ls) - np.array(self.factor_holtwinters)).tolist()
+        
+ 
+    def factor_cal_fluctuationrateCMA30(self):
+        """
+        计算波动率比率：(_unit_value_ls - factor_CMA30)的标准差 / CMA30的最近值
+        
+        Returns:
+            float: 波动率比率
+        """
+        if not hasattr(self, 'factor_CMA30') or not self.factor_CMA30:
+            raise ValueError("factor_CMA30 未计算，请先调用 factor_cal_CMA(30)")
+        
+        # 转换为numpy数组进行计算
+        unit_values = np.array(self._unit_value_ls)
+        cma30_values = np.array(self.factor_CMA30)
+        
+        # 计算差值，只考虑非None的部分
+        diff_values = []
+        recent_cma30 = None
+        
+        for i in range(len(unit_values)):
+            if self.factor_CMA30[i] is not None:
+                diff_values.append(unit_values[i] - cma30_values[i])
+                recent_cma30 = cma30_values[i]  # 更新最近的CMA30值
+        
+        if not diff_values or recent_cma30 is None:
+            raise ValueError("没有有效的CMA30数据用于计算")
+        
+        # 计算标准差
+        std_diff = np.std(diff_values)
+        
+        # 计算波动率比率
+        fluctuation_rate = std_diff / recent_cma30
+        
+        return fluctuation_rate
 
-    def operate_info(self) -> None:
+    def factor_cal_holtwinters_delta_percentage(self):
         """
-        打印 info_dict 属性中保存的所有信息
+        计算HoltWinters平滑差分的百分比变化。
+        结果存储在 self.factor_holtwinters_delta_percentage 中。
         """
-        print("Info Dictionary:")
-        for key, value in self.info_dict.items():
-            print(f"{key}: {value}")
+        if not self.factor_holtwinters_delta:
+            raise ValueError("factor_holtwinters_delta 未计算，请先调用 factor_cal_holtwinters()")
+        
+        for i in range(len(self.factor_holtwinters_delta)):
+            if i > len(self.factor_holtwinters_delta) - 3:
+                delta_percentage_i = 0
+            else:
+                len_i = (len(self.factor_holtwinters_delta)-i)//2
+                sublist = self.factor_holtwinters_delta[i+1:i+1+len_i]
+                delta_percentage_i = (float(len([x for x in sublist if x < self.factor_holtwinters_delta[i]]))/float(len(sublist)))*2 -1
+            self.factor_holtwinters_delta_percentage.append(delta_percentage_i)
+        # 处理最后一个estimate点
+        if self.estimate_isupdate is False and self.estimate_value is not None:
+            # 如果有估计值，最后一个点的百分比变化为0
+            self.factor_holtwinters_estimate_delta = self.estimate_value - self.factor_holtwinters_estimate
+            lendata = (len(self.factor_holtwinters_delta)-1)//2
+            sublist = self.factor_holtwinters_delta[0:lendata]
+            delta_percentage= (float(len([x for x in sublist if x < self.factor_holtwinters_estimate_delta])) / float(len(sublist))) * 2 - 1
+            self.factor_holtwinters_estimate_delta_percentage = delta_percentage
+        return self.factor_holtwinters_delta_percentage
+
+    def cal_backtest(self):
+        threshold = 0.8
+        hold = False
+        #计算买入卖出列表buylist
+        buylist = []
+        for i in range(len(self._date_ls)-1, -1, -1):
+            if self.factor_holtwinters_delta_percentage[i] < -threshold and not hold:
+                buylist.append(1)
+                hold = True
+            elif self.factor_holtwinters_delta_percentage[i] > threshold and hold:
+                buylist.append(-1)
+                hold = False
+            else:
+                buylist.append(0)
+        
+        #从hold计算收益率
+        timelength = 500
+        hold = False
+        money = [1]
+        hold_unit_amount = None
+        for i in range(len(buylist)-1, -1, -1):
+            if i > timelength:
+                money.insert(0, 1)  # 前 timelength 天不操作，保持原有金额
+                continue
+            else:
+                if buylist[i] == 1 and not hold:
+                    hold = True
+                    hold_unit_amount = money[0] / self._unit_value_ls[i]
+                    money.insert(0, hold_unit_amount * self._unit_value_ls[i])
+                elif buylist[i] == -1 and hold:
+                    hold = False
+                    money.insert(0, hold_unit_amount * self._unit_value_ls[i])
+                else:
+                    if hold:
+                        money.insert(0, hold_unit_amount * self._unit_value_ls[i])
+                    else:
+                        money.insert(0,money[0])
+        return money[0:-1], buylist
