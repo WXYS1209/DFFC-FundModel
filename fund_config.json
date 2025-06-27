@@ -1,0 +1,142 @@
+[
+  {
+    "code": "008299",
+    "name": "华夏中证银行ETF联接C",
+    "params": {
+      "alpha": 0.0721,
+      "beta": 0.00939,
+      "gamma": 0.0398,
+      "season_length": 9
+    },
+    "estimate_info": {
+      "code": "512730",
+      "type": "fund"
+    }
+  },
+  {
+    "code": "004253",
+    "name": "国泰黄金ETF联接C",
+    "params": {
+      "alpha": 0.111,
+      "beta": 0.00609,
+      "gamma": 0.0277,
+      "season_length": 14
+    },
+    "estimate_info": {
+      "code": "518880",
+      "type": "fund"
+    }
+  },
+  {
+    "code": "008087",
+    "name": "华夏5G通信ETF联接C",
+    "params": {
+      "alpha": 0.1,
+      "beta": 0.00539,
+      "gamma": 0.0451,
+      "season_length": 10
+    },
+    "estimate_info": {
+      "code": "515050",
+      "type": "fund"
+    }
+  },
+  {
+    "code": "011937",
+    "name": "华夏阿尔法精选混合",
+    "params": {
+      "alpha": 0.074,
+      "beta": 0.0281,
+      "gamma": 0.415,
+      "season_length": 14
+    }
+  },
+  {
+    "code": "017102",
+    "name": "大摩数字经济混合",
+    "params": {
+      "alpha": 0.0756,
+      "beta": 0.0195,
+      "gamma": 0.174,
+      "season_length": 14
+    }
+  },
+  {
+    "code": "017437",
+    "name": "华宝纳斯达克100ETF联接C",
+    "params": {
+      "alpha": 0.141,
+      "beta": 0.0105,
+      "gamma": 0.084,
+      "season_length": 23
+    }
+  },
+  {
+    "code": "021483",
+    "name": "华夏低波红利ETF联接C",
+    "params": {
+      "alpha": 0.0842,
+      "beta": 0.0121,
+      "gamma": 0.223,
+      "season_length": 22
+    },
+    "estimate_info": {
+      "code": "159547",
+      "type": "fund"
+    }
+  },
+  {
+    "code": "012997",
+    "name": "鹏华优选汇报灵活配置混合C",
+    "params": {
+      "alpha": 0.1278,
+      "beta": 0.00807,
+      "gamma": 0.1861,
+      "season_length": 16
+    }
+  },
+  {
+    "code": "013360",
+    "name": "华夏磐泰混合(LOF)",
+    "params": {
+      "alpha": 0.1129,
+      "beta": 0.00959,
+      "gamma": 0.186,
+      "season_length": 17
+    }
+  },
+  {
+    "code": "020423",
+    "name": "华夏中证港股通内地金融ETF联接C",
+    "params": {
+      "alpha": 0.05416,
+      "beta": 0.01629,
+      "gamma": 0.1183,
+      "season_length": 24
+    },
+    "estimate_info": {
+      "code": "513190",
+      "type": "fund"
+    }
+  },
+  {
+    "code": "320016",
+    "name": "诺安多策略混合",
+    "params": {
+      "alpha": 0.09498,
+      "beta": 0.002561,
+      "gamma": 0.01241,
+      "season_length": 21
+    }
+  },
+  {
+    "code": "010365",
+    "name": "鹏华香港银行指数C",
+    "params": {
+      "alpha": 0.08556,
+      "beta": 0.008841,
+      "gamma": 0.2153,
+      "season_length": 21
+    }
+  }
+]

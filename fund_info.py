@@ -11,9 +11,9 @@ class FuncInfo(object):
         self.code = code                           # 基金代码
         self.name = name                           # 基金名
         self.fund_type = fund_type                 # 类型
-        self._unit_value_ls = []                   # 单位净值list
+        self._unit_value_ls = []                   # 单位净值list (字符串类型, ExtendedFuncInfo类中会转换为float类型)
         self._cumulative_value_ls = []             # 累计净值list
-        self._daily_growth_rate_ls = []            # 日增长率
+        self._daily_growth_rate_ls = []            # 日增长率     (字符串类型, ExtendedFuncInfo类中会转换为float类型) 
         self._purchase_state_ls = []               # 申购状态
         self._redemption_state_ls = []             # 赎回状态
         self._bonus_distribution_ls = []           # 分红送配
@@ -138,9 +138,9 @@ class FuncInfo(object):
 
 if __name__ == '__main__':
     # 主执行部分：创建一个 FuncInfo 实例，加载特定日期范围内的数据，打印一些值，并将数据导出到CSV文件
-    j = FuncInfo(code='320016', name="")
+    j = FuncInfo(code='010365', name="")
     j.load_net_value_info(datetime(2000, 9, 1), datetime(2029, 9, 20))
     date = "2019-09-20"
     print(j.get_unit_value(date), j.get_cumulative_value(date), j.get_daily_growth_rate(date))
     df = j.get_data_frame()
-    df.to_csv("./320016.csv")
+    df.to_csv("./010365.csv")

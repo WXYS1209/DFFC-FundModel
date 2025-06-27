@@ -9,12 +9,22 @@ class ExtendedFuncInfo(FuncInfo):
     扩展FuncInfo类，新增方法用于处理单位净值数据，
     例如计算HoltWinters平滑、差分以及概率密度分布。
     """
-    def __init__(self, estimate_info={'code': '', 'type': ''}, *args, **kwargs, ):
+    def __init__(self, estimate_info = {'code': '', 'type': ''}, *args, **kwargs, ):
         super().__init__(*args, **kwargs)
         self.info_dict = {}          # 新增属性：存储信息的字典
 
         # 初始化时爬虫加载数据
         self.load_net_value_info(datetime(2000, 1, 1), datetime(2050, 9, 20))
+
+        # 从某个ETF抓取当日估值信息，调整爬虫数据的字符串值，变为浮点数和Datetime对象
+        self.estimate_info = estimate_info  # 新增属性：存储估计信息
+        self.estimate_isupdate = True  # 新增属性：是否为今天的估计值
+        self.estimate_datetime = None  # 新增属性：存储估计日期时间
+        self.estimate_changepercent = None  # 新增属性：存储估计涨跌幅
+        self.estimate_value = None  # 新增属性：存储估计值
+        self._unit_value_ls = [float(x) for x in self._unit_value_ls]  # 将单位净值列表从字符串转换为浮点数
+        self._cumulative_value_ls = [float(x) for x in self._cumulative_value_ls]  # 将累计净值列表从字符串转换为浮点数
+        self._daily_growth_rate_ls = [float(x[:-1]) if x != '' else None for x in self._daily_growth_rate_ls]  # 将日增长率列表从字符串转换为浮点数（百分数）
 
         # 使用的因子参数
         self.factor_holtwinters_parameter=None
@@ -27,16 +37,10 @@ class ExtendedFuncInfo(FuncInfo):
         self.factor_CMA30 = None
         self.factor_fluctuationrateCMA30 = None
 
-        # 从某个ETF抓取当日估值信息
-        self.estimate_info = estimate_info  # 新增属性：存储估计信息
-        self.estimate_datetime = None  # 新增属性：存储估计日期时间
-        self.estimate_changepercent = None  # 新增属性：存储估计涨跌幅
-        self.estimate_value = None  # 新增属性：存储估计值
-        self.estimate_isupdate = True  # 新增属性：是否为今天的估计值
-        self._unit_value_ls = [float(x) for x in self._unit_value_ls]  # 确保单位净值列表为浮点数
-
         # 计算相关因子和初始化函数
         self.get_nextday_estimate() # 获取下一日估计值
+
+        # 计算一些自定义的参数
         self.factor_CMA30 = self.factor_cal_CMA(30)  # 计算30日中心移动平均
         self.factor_fluctuationrateCMA30 = self.factor_cal_fluctuationrateCMA30()  # 计算波动率比率
 
@@ -53,8 +57,9 @@ class ExtendedFuncInfo(FuncInfo):
             'estimate_changepercent': self.estimate_changepercent if self.estimate_info['code'] != '' else None,
             'factor_holtwinters_estimate_delta_percentage': self.factor_holtwinters_estimate_delta_percentage,
             'now_date': self._date_ls[0].strftime('%Y-%m-%d'),
-            'now_changepercent': float((self._daily_growth_rate_ls[0])[:-1]),#self._daily_growth_rate_ls[0],
+            'now_changepercent': self._daily_growth_rate_ls[0],
             'now_holtwinters_delta_percentage': self.factor_holtwinters_delta_percentage[0],
+            'yesterday_holtwinters_delta_percentage': self.factor_holtwinters_delta_percentage[1],
             'factor_fluctuationrateCMA30': self.factor_fluctuationrateCMA30
         }
 
@@ -245,42 +250,3 @@ class ExtendedFuncInfo(FuncInfo):
             delta_percentage= (float(len([x for x in sublist if x < self.factor_holtwinters_estimate_delta])) / float(len(sublist))) * 2 - 1
             self.factor_holtwinters_estimate_delta_percentage = delta_percentage
         return self.factor_holtwinters_delta_percentage
-
-    def cal_backtest(self):
-        threshold = 0.8
-        hold = False
-        #计算买入卖出列表buylist
-        buylist = []
-        for i in range(len(self._date_ls)-1, -1, -1):
-            if self.factor_holtwinters_delta_percentage[i] < -threshold and not hold:
-                buylist.append(1)
-                hold = True
-            elif self.factor_holtwinters_delta_percentage[i] > threshold and hold:
-                buylist.append(-1)
-                hold = False
-            else:
-                buylist.append(0)
-        
-        #从hold计算收益率
-        timelength = 500
-        hold = False
-        money = [1]
-        hold_unit_amount = None
-        for i in range(len(buylist)-1, -1, -1):
-            if i > timelength:
-                money.insert(0, 1)  # 前 timelength 天不操作，保持原有金额
-                continue
-            else:
-                if buylist[i] == 1 and not hold:
-                    hold = True
-                    hold_unit_amount = money[0] / self._unit_value_ls[i]
-                    money.insert(0, hold_unit_amount * self._unit_value_ls[i])
-                elif buylist[i] == -1 and hold:
-                    hold = False
-                    money.insert(0, hold_unit_amount * self._unit_value_ls[i])
-                else:
-                    if hold:
-                        money.insert(0, hold_unit_amount * self._unit_value_ls[i])
-                    else:
-                        money.insert(0,money[0])
-        return money[0:-1], buylist

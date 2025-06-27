@@ -214,7 +214,7 @@ def compute_optimize_result(end_day, original_data):
 # %%
 # 测试新函数（仅供调试，可删除）
 if __name__ == "__main__":
-    original_data = np.flip(get_unit_nav_numpy("./csv_data/013360.csv"))
+    original_data = np.flip(get_unit_nav_numpy("./csv_data/010365.csv"))
     mean_data = sliding_average(original_data, MOVING_AVERAGE_WINDOW)  # 使用设定的均线窗口
 
     # 设置可调并行线程数
@@ -232,7 +232,7 @@ if __name__ == "__main__":
             print(f"end_day={result['end_day']}, 参数: {[result['alpha'], result['beta'], result['gamma']]}, season={result['season']}, rss={result['rss']}")
     
     results_df = pd.DataFrame(results)
-    results_df.to_csv("./holtwinters_results_013360_30.csv", index=False)
+    results_df.to_csv("./holtwinters_results_010365_30.csv", index=False)
     
     # 绘图部分，使用最后一次优化的结果
     import matplotlib.pyplot as plt  # 如果已导入则忽略

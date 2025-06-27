@@ -38,7 +38,6 @@ def plot_fund(fund):
     plt.tight_layout()
     plt.show()
 
-
 # 新增打印函数，用于命令行输出 fund 的 info_dict
 def print_fund_info(fund):
     fund.set_info_dict()
@@ -54,43 +53,6 @@ fundmain.factor_cal_holtwinters_delta_percentage()
 fundmain.set_info_dict()
 print_fund_info(fundmain)
 
-backtest_main, buylist = fundmain.cal_backtest()
-# 绘制 fundmain 单位净值与回测资金曲线
-plt.figure(figsize=(12, 6))
-dates_bt = fundmain._date_ls  # 对应回测结果的日期，去掉最后一个
-plt.plot(fundmain._date_ls, fundmain._unit_value_ls, label='Unit Value', color='blue', linewidth=1)
-plt.plot(dates_bt, backtest_main, label='Backtest Equity Curve', color='orange', linewidth=1)
-plt.title(f'Fund {fundmain.code}: Unit Value vs Backtest')
-plt.xlabel('Date')
-plt.ylabel('Value')
-plt.legend()
-plt.xticks(rotation=45)
-plt.grid(True, alpha=0.3)
-plt.tight_layout()
-plt.show()
-
-# 新图：在净值曲线上标注买入卖出点
-plt.figure(figsize=(12,6))
-dates = fundmain._date_ls[:-1]  # 忽略最后一个与回测结果不对应的日期
-unit_vals = fundmain._unit_value_ls[:-1]
-plt.plot(dates, unit_vals, label='Unit Value', color='blue')
-# 标注买入点
-buy_dates = [fundmain._date_ls[i] for i, sig in enumerate(buylist) if sig == 1]
-buy_vals = [fundmain._unit_value_ls[i] for i, sig in enumerate(buylist) if sig == 1]
-plt.scatter(buy_dates, buy_vals, marker='^', color='green', label='Buy', zorder=5)
-# 标注卖出点
-sell_dates = [fundmain._date_ls[i] for i, sig in enumerate(buylist) if sig == -1]
-sell_vals = [fundmain._unit_value_ls[i] for i, sig in enumerate(buylist) if sig == -1]
-plt.scatter(sell_dates, sell_vals, marker='v', color='red', label='Sell', zorder=5)
-plt.title(f'Fund {fundmain.code}: Buy/Sell Signals on Unit Value')
-plt.xlabel('Date')
-plt.ylabel('Unit Value')
-plt.legend()
-plt.xticks(rotation=45)
-plt.grid(True, alpha=0.3)
-plt.tight_layout()
-plt.show()
-
 # 华夏中证银行etf联接C ===============================================================
 print("==========================================================")
 fund1 = ExtendedFuncInfo(code='008299', name='华夏中证银行ETF联接C', estimate_info = {'code': '512730', 'type': 'fund'})
@@ -99,6 +61,7 @@ fund1.factor_cal_holtwinters()
 fund1.factor_cal_holtwinters_delta_percentage()
 fund1.set_info_dict()
 print_fund_info(fund1)
+plot_fund(fund1)
 
 # 黄金ETF联接C ============================================================
 print("==========================================================")
@@ -190,7 +153,7 @@ print_fund_info(ganggu)
 # 诺安 ============================================================
 print("==========================================================")
 nuoanduocelue = ExtendedFuncInfo(code='320016', name='诺安多策略混合')
-nuoanduocelue.factor_holtwinters_parameter = {'alpha': 0.05, 'beta': 0.02, 'gamma': 0.1, 'season_length': 24}    
+nuoanduocelue.factor_holtwinters_parameter = {'alpha': 0.09498, 'beta': 0.002561, 'gamma': 0.01241, 'season_length': 21}    
 nuoanduocelue.factor_cal_holtwinters()
 nuoanduocelue.factor_cal_holtwinters_delta_percentage()
 nuoanduocelue.set_info_dict()
