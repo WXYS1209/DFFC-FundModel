@@ -1,8 +1,8 @@
-from fund_info import FuncInfo
+from .fund_info import FuncInfo
 import pandas as pd
 import numpy as np
 from datetime import datetime
-from stock_net_value_crawler import StockNetValueCrawler
+from .stock_net_value_crawler import StockNetValueCrawler
 
 class ExtendedFuncInfo(FuncInfo):
     """
@@ -232,6 +232,9 @@ class ExtendedFuncInfo(FuncInfo):
         """
         if not self.factor_holtwinters_delta:
             raise ValueError("factor_holtwinters_delta 未计算，请先调用 factor_cal_holtwinters()")
+        
+        # 清空之前的结果，避免累积
+        self.factor_holtwinters_delta_percentage = []
         
         for i in range(len(self.factor_holtwinters_delta)):
             if i > len(self.factor_holtwinters_delta) - 3:

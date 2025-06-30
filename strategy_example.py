@@ -1,7 +1,7 @@
 from datetime import datetime
 import matplotlib.pyplot as plt
-from backtest_funcinfo import BackTestFuncInfo
-from extended_funcinfo import ExtendedFuncInfo
+from source.backtest_funcinfo import BackTestFuncInfo
+from source.extended_funcinfo import ExtendedFuncInfo
 
 # 设置中文字体
 plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
@@ -75,6 +75,6 @@ if __name__ == "__main__":
     print("==========================================================")
 
     # 运行策略回测
-    strategy = StrategyExample(fund_list=[fundmain], start_date=datetime(2023, 1, 15), end_date=datetime(2023, 1, 20))
+    strategy = StrategyExample(fund_list=[fundmain], start_date=datetime(2023, 1, 15), end_date=datetime(2025, 1, 20))
     strategy.run()
     strategy.plot_result()

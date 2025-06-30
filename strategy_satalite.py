@@ -25,11 +25,25 @@ class StrategyExample(BackTestFuncInfo):
         self.sell_threshold1 = 1.1  
         self.sell_threshold2 = 0.5
         self.drawdown_threshold = 0.02  # 止损阈值2%
+        #持仓参数
+        self.cube_size = 3  # 每次交易的份额大小
 
         # 计算使用参数
-        self.hold = False
-        self.highest_value = None
-
+        self.order_list = []
+        '''
+        {
+            'fund_number': 0,
+            'shares': 0,
+            'buy_unit_value': 0,
+            'sell_unit_value': 0,
+            'buy_date': None,
+            'sell_date': None,
+            'highest_value': 0,  # 当前持仓的最高净值
+            'earning_rate': None,  # 当前持仓的收益率
+        }
+        '''
+        self.fund_list_situation = [False for _ in range(len(fund_list))]
+        self.hold_num = 0
 
     """
     重写策略函数说明：会在每天的交易前被调用，根据基金净值列表、持仓、历史交易等信息生成交易信号。
@@ -72,36 +86,23 @@ class StrategyExample(BackTestFuncInfo):
 
     # 重写策略函数
     def strategy_func(self):
-        # 判断是否持仓，如果持仓进入是否卖出判断，如果非持仓进入买入判断
         nowdate = deepcopy(self.current_date)
-        if not self.hold:
-            if self.strategy_list[0][2][0] < self.buy_threshold1 or (self.strategy_list[0][2][0] > self.buy_threshold2 and self.strategy_list[0][2][1] < self.buy_threshold2):
-                # 满足买入条件，买入第一支基金
-                cash_amount = deepcopy(self.current_asset[1][0])
-                self.highest_value = deepcopy(self.strategy_list[0][1][0])  # 初始化最高净值为当前净值
-                self.hold = True  # 设置持仓状态
-                return [nowdate, [0, 1, cash_amount, cash_amount]]
-            else:
-                return None
-        else:
-            # 判断是否止损条件并且更新最高值
-            nowunitvalue = self.strategy_list[0][1][0]
-            if nowunitvalue > self.highest_value:
-                self.highest_value = deepcopy(nowunitvalue)
-            # 如果当前净值回撤超过2%，且当前不符合买入条件：卖出
-            if self.highest_value * (1 - self.drawdown_threshold) > nowunitvalue and \
-               not (self.strategy_list[0][2][0] < self.buy_threshold1 or (self.strategy_list[0][2][0] > self.buy_threshold2 and self.strategy_list[0][2][1] < self.buy_threshold2)):
-                fund_shares = deepcopy(self.current_asset[1][1]) # 卖出第一支基金的份额
-                self.hold = False  # 设置非持仓状态
-                return [nowdate, [1, 0, fund_shares, nowunitvalue* fund_shares]]
+        datetime_list = deepcopy(self.strategy_list[:][0])  # 获取基金的日期列表
+        unit_value_list = deepcopy(self.strategy_list[:][1])  # 获取基金的净值列表
+        hdp_list = deepcopy(self.strategy_list[:][2])  # 获取基金的holtwinters_delta_percentage数据
+        operation_list = []  # 当日的交易列表
+        # 对每个基金遍历判断是否需要操作
+        for fund_number in range(len(self.strategy_list)):
+            # 如果当前基金没有持仓，则判断是否需要买入
+            if not self.fund_list_situation[fund_number]:
 
-            # 判断卖出条件
-            if self.strategy_list[0][2][0] > self.sell_threshold1 or (self.strategy_list[0][2][0] < self.sell_threshold2 and self.strategy_list[0][2][1] > self.sell_threshold2):
-                fund_shares = deepcopy(self.current_asset[1][1])  # 卖出第一支基金的份额
-                self.hold = False  # 设置非持仓状态
-                return [nowdate, [1, 0, fund_shares, nowunitvalue* fund_shares]]
-            else:
-                return None
+                if (self.hold_num < self.cube_size and # 还有卫星仓位份
+                    hdp_list[fund_number][0] < self.buy_threshold1 or #买入条件1
+                    (hdp_list[fund_number][0] > self.buy_threshold2 and #买入条件2
+                    hdp_list[fund_number][1] < self.buy_threshold2)):
+                    # 满足买入条件，买入基金
+                    cash_amount = deepcopy(self.current_asset[1][0])
+                    shares_to_buy = cash_amount // unit_value_list[fund_number][0]
 
 
 

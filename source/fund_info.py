@@ -138,9 +138,9 @@ class FuncInfo(object):
 
 if __name__ == '__main__':
     # 主执行部分：创建一个 FuncInfo 实例，加载特定日期范围内的数据，打印一些值，并将数据导出到CSV文件
-    j = FuncInfo(code='010365', name="")
+    j = FuncInfo(code='008163', name="")
     j.load_net_value_info(datetime(2000, 9, 1), datetime(2029, 9, 20))
     date = "2019-09-20"
     print(j.get_unit_value(date), j.get_cumulative_value(date), j.get_daily_growth_rate(date))
     df = j.get_data_frame()
-    df.to_csv("./010365.csv")
+    df.to_csv("./csv_data/008163.csv")

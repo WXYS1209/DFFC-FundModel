@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from extended_funcinfo import ExtendedFuncInfo
+from .extended_funcinfo import ExtendedFuncInfo
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import numpy as np

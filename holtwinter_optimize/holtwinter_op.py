@@ -1,8 +1,12 @@
-# %%
 import numpy as np
 import pandas as pd
 import scipy.optimize as opt
-from tqdm import tqdm
+from datetime import datetime
+# 为了正常导入source中的包
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from source.fund_info import FuncInfo
 from concurrent.futures import ProcessPoolExecutor, as_completed  # 新增导入
 
 # 添加均线窗口大小设置
@@ -214,7 +218,22 @@ def compute_optimize_result(end_day, original_data):
 # %%
 # 测试新函数（仅供调试，可删除）
 if __name__ == "__main__":
-    original_data = np.flip(get_unit_nav_numpy("./csv_data/010365.csv"))
+    fundcode= '020423'
+
+    # 主执行部分：创建一个 FuncInfo 实例，加载特定日期范围内的数据，打印一些值，并将数据导出到CSV文件
+    j = FuncInfo(code=fundcode, name="")
+    j.load_net_value_info(datetime(2000, 9, 1), datetime(2029, 9, 20))
+    df = j.get_data_frame()
+    df.to_csv(f"./csv_data/{fundcode}.csv")
+
+    # 定义输入文件路径
+    input_csv_path = f"./csv_data/{fundcode}.csv"
+
+    # 提取文件名（不含扩展名）
+    import os
+    base_filename = os.path.splitext(os.path.basename(input_csv_path))[0]
+    
+    original_data = np.flip(get_unit_nav_numpy(input_csv_path))
     mean_data = sliding_average(original_data, MOVING_AVERAGE_WINDOW)  # 使用设定的均线窗口
 
     # 设置可调并行线程数
@@ -232,21 +251,67 @@ if __name__ == "__main__":
             print(f"end_day={result['end_day']}, 参数: {[result['alpha'], result['beta'], result['gamma']]}, season={result['season']}, rss={result['rss']}")
     
     results_df = pd.DataFrame(results)
-    results_df.to_csv("./holtwinters_results_010365_30.csv", index=False)
+    # 按照end_day排序
+    results_df = results_df.sort_values('end_day')
+    # 使用提取的文件名构建输出文件名
+    output_filename = f"./holtwinters_results_{base_filename}_{MOVING_AVERAGE_WINDOW}.csv"
+    results_df.to_csv(output_filename, index=False)
+    print(f"结果已保存到: {output_filename}")
     
-    # 绘图部分，使用最后一次优化的结果
+    # 绘图部分，使用排序后最后一个优化结果
     import matplotlib.pyplot as plt  # 如果已导入则忽略
-    plt.figure(figsize=(10, 4))
-    plt.plot(original_data, label='Original Data', marker='o', linestyle='-')
-    plt.plot(mean_data, label='Sliding Average', marker='x', linestyle='--')
-    # 使用最后一个处理结果来绘图
-    last_result = results[-1]
-    plt.plot(holtwinters_rolling(original_data, last_result['alpha'], last_result['beta'], last_result['gamma'], last_result['season']),
-             label='HoltWinter')
-    plt.title('')
+    
+    # 创建上下排布的两个子图，拉宽图形
+    plt.figure(figsize=(15, 10))
+    
+    # 第一张图：原始数据、滑动平均和HoltWinter平滑结果
+    plt.subplot(2, 1, 1)
+    plt.plot(original_data, label='Original Data', marker='o', linestyle='-', markersize=1)
+    plt.plot(mean_data, label='Sliding Average', marker='x', linestyle='--', markersize=1)
+    # 使用排序后最后一个处理结果来绘图
+    last_result = results_df.iloc[-1]
+    plt.plot(holtwinters_rolling(original_data, last_result['alpha'], last_result['beta'], last_result['gamma'], int(last_result['season'])),
+             label='HoltWinter', linewidth=2)
+    plt.title('Data Comparison')
     plt.xlabel('Index')
     plt.ylabel('Value')
     plt.legend()
     plt.grid(True)
+    
+    # 第二张图：各个参数随end_days的变化
+    plt.subplot(2, 1, 2)
+    # 创建双y轴图
+    ax1 = plt.gca()
+    ax2 = ax1.twinx()
+    
+    # 在左y轴绘制alpha, beta, gamma
+    line1 = ax1.plot(results_df['end_day'], results_df['alpha'], 'b-', marker='o', label='Alpha', markersize=4)
+    line2 = ax1.plot(results_df['end_day'], results_df['beta'], 'g-', marker='s', label='Beta', markersize=4)
+    line3 = ax1.plot(results_df['end_day'], results_df['gamma'], 'r-', marker='^', label='Gamma', markersize=4)
+    ax1.set_xlabel('End Day')
+    ax1.set_ylabel('Alpha, Beta, Gamma', color='black')
+    ax1.tick_params(axis='y', labelcolor='black')
+    ax1.grid(True, alpha=0.3)
+    
+    # 在右y轴绘制season
+    line4 = ax2.plot(results_df['end_day'], results_df['season'], 'm-', marker='D', label='Season', markersize=4)
+    ax2.set_ylabel('Season Length', color='m')
+    ax2.tick_params(axis='y', labelcolor='m')
+    
+    # 合并图例
+    lines = line1 + line2 + line3 + line4
+    labels = [l.get_label() for l in lines]
+    ax1.legend(lines, labels, loc='upper left')
+    
+    plt.title('Parameters vs End Days')
+    plt.tight_layout()
     plt.show()
+    
+    # 输出最终参数信息
+    print(f"\n最终优化参数（end_day={last_result['end_day']}）:")
+    print(f"Alpha: {last_result['alpha']:.6f}")
+    print(f"Beta: {last_result['beta']:.6f}")
+    print(f"Gamma: {last_result['gamma']:.6f}")
+    print(f"Season: {last_result['season']}")
+    print(f"RSS: {last_result['rss']:.6f}")
 # %%
