@@ -1,0 +1,182 @@
+[
+  {
+    "code": "013360",
+    "name": "华夏磐泰混合(LOF)",
+    "params": {
+      "alpha": 0.0956,
+      "beta": 0.005153,
+      "gamma": 0.1863,
+      "season_length": 17
+    },
+    "fund_type": "long",
+    "tag": "债基"
+  },
+  {
+    "code": "010365",
+    "name": "鹏华香港银行指数C",
+    "params": {
+      "alpha": 0.08556,
+      "beta": 0.008841,
+      "gamma": 0.2153,
+      "season_length": 21
+    },
+    "fund_type": "long",
+    "tag": "红利港股"
+  },
+  {
+    "code": "007467",
+    "name": "华泰柏瑞中证红利低波动ETF联接C",
+    "params": {
+      "alpha": 0.08776,
+      "beta": 0.05789,
+      "gamma": 0.09095,
+      "season_length":17 
+    },
+    "estimate_info": {
+      "code": "512890",
+      "type": "fund"
+    },
+    "fund_type": "long",
+    "tag":"红利"
+  },
+  {
+    "code": "004253",
+    "name": "国泰黄金ETF联接C",
+    "params": {
+      "alpha": 0.111,
+      "beta": 0.00609,
+      "gamma": 0.0277,
+      "season_length": 14
+    },
+    "estimate_info": {
+      "code": "518880",
+      "type": "fund"
+    },
+    "fund_type": "long",
+    "tag": "黄金"
+  },
+  {
+    "code": "017437",
+    "name": "华宝纳斯达克精选股票C",
+    "params": {
+      "alpha": 0.1445,
+      "beta": 0.01035,
+      "gamma": 0.086457,
+      "season_length": 23 
+    },
+    "fund_type": "long",
+    "tag": "美股"
+  },
+  {
+    "code": "011937",
+    "name": "华夏阿尔法精选混合",
+    "params": {
+      "alpha": 0.0941,
+      "beta": 0.02156,
+      "gamma": 0.1914,
+      "season_length": 16
+    },
+    "fund_type": "short",
+    "tag": "科技+制造"
+  },
+  {
+    "code": "017102",
+    "name": "大摩数字经济混合A",
+    "params": {
+      "alpha": 0.1045,
+      "beta": 0.01346,
+      "gamma": 0.04151,
+      "season_length": 24
+    },
+    "fund_type": "short",
+    "tag": "科技（综合）"
+  },
+  {
+    "code": "012997",
+    "name": "鹏华优选回报灵活配置混合C",
+    "params": {
+      "alpha": 0.1280,
+      "beta": 0.007697,
+      "gamma": 0.1855,
+      "season_length": 16
+    },
+    "fund_type": "short",
+    "tag": "消费"
+  },
+  {
+    "code": "015254",
+    "name": "申万菱信消费增长混合C",
+    "params": {
+      "alpha": 0.11077,
+      "beta": 0.02186,
+      "gamma": 0.4113,
+      "season_length": 16
+    },
+    "fund_type": "short",
+    "tag": "消费"
+  },
+  {
+    "code": "020423",
+    "name": "华夏中证港股通内地金融ETF联接C",
+    "params": {
+      "alpha": 0.05508,
+      "beta": 0.016598,
+      "gamma": 0.12826,
+      "season_length": 24
+    },
+    "estimate_info": {
+      "code": "513190",
+      "type": "fund"
+    },
+    "fund_type": "short",
+    "tag": "大金融"
+  },
+  {
+    "code": "320016",
+    "name": "诺安多策略混合",
+    "params": {
+      "alpha": 0.09378,
+      "beta": 0.002636,
+      "gamma": 0.01302,
+      "season_length": 21
+    },
+    "fund_type": "short",
+    "tag": "多策略（资源/制造/消费/医药）"
+  },
+  {
+    "code": "021694",
+    "name": "银华抗通胀主题(QDII-FOF-LOF)C",
+    "params": {
+      "alpha": 0.0257,
+      "beta": 0.02334,
+      "gamma": 0.1903,
+      "season_length": 14
+    },
+    "fund_type": "short",
+    "tag": "全球大宗商品"
+  },
+  {
+    "code": "013356",
+    "name": "大摩沪港深精选混合A",
+    "params": {
+      "alpha": 0.117,
+      "beta": 0.009484,
+      "gamma": 0.05293,
+      "season_length": 20
+    },
+    "fund_type": "short",
+    "tag": "医药"
+  },
+  {
+    "code": "010500",
+    "name": "中银创新医疗混合C",
+    "params": {
+      "alpha": 0.1178,
+      "beta": 0.004276,
+      "gamma": 0.078136,
+      "season_length": 20
+    },
+    "fund_type": "short",
+    "tag": "医药"
+  }
+]

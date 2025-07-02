@@ -21,7 +21,7 @@ def get_unit_nav_numpy(path):
         parse_dates=['净值日期']
     )
     # 只导入单位净值列，并转换为浮点类型的numpy数组
-    unit_nav = df['单位净值'].astype(float).to_numpy()
+    unit_nav = df['累计净值'].astype(float).to_numpy()
     return unit_nav
 
 
@@ -218,7 +218,7 @@ def compute_optimize_result(end_day, original_data):
 # %%
 # 测试新函数（仅供调试，可删除）
 if __name__ == "__main__":
-    fundcode= '020423'
+    fundcode= '010365'
 
     # 主执行部分：创建一个 FuncInfo 实例，加载特定日期范围内的数据，打印一些值，并将数据导出到CSV文件
     j = FuncInfo(code=fundcode, name="")

@@ -42,30 +42,16 @@ def print_fund_info(fund):
     for key, value in fund.info_dict.items():
         print(f"{key}: {value}")
 
-# 华夏中证银行etf联接C ===============================================================
-print("==========================================================")
-fund1 = ExtendedFuncInfo(code='008299', name='华夏中证银行ETF联接C', estimate_info = {'code': '512730', 'type': 'fund'})
-fund1.factor_holtwinters_parameter = {'alpha': 0.0721, 'beta': 0.00939, 'gamma': 0.0398, 'season_length': 9}
-fund1.factor_cal_holtwinters()
-fund1.factor_cal_holtwinters_delta_percentage()
-fund1.set_info_dict()
-print_fund_info(fund1)
-
 # 黄金ETF联接C ============================================================
 print("==========================================================")
 fundgold = ExtendedFuncInfo(code='004253', name='国泰黄金ETF联接C', estimate_info = {'code': '518880', 'type': 'fund'})
+fundgold.load_data_net()  # 从网络加载数据
+fundgold.load_estimate_net()  # 获取下一日估计值
 fundgold.factor_holtwinters_parameter = {'alpha': 0.111, 'beta': 0.00609, 'gamma': 0.0277, 'season_length': 14}
 fundgold.factor_cal_holtwinters()
 fundgold.factor_cal_holtwinters_delta_percentage()
+fundgold.factor_CMA30 = fundgold.factor_cal_CMA(30)  # 计算30日中心移动平均
+fundgold.factor_fluctuationrateCMA30 = fundgold.factor_cal_fluctuationrateCMA30()
 fundgold.set_info_dict()
 print_fund_info(fundgold)
-
-# 华夏低波红利ETF联接C ============================================================
-print("==========================================================")
-funddb = ExtendedFuncInfo(code='021483', name='华夏低波红利ETF联接C', estimate_info = {'code': '159547', 'type': 'fund'})
-funddb.factor_holtwinters_parameter = {'alpha': 0.0842, 'beta': 0.0121, 'gamma': 0.223, 'season_length': 22}    
-funddb.factor_cal_holtwinters()
-funddb.factor_cal_holtwinters_delta_percentage()
-funddb.set_info_dict()
-print_fund_info(funddb)
-plot_fund(funddb)
+plot_fund(fundgold)
