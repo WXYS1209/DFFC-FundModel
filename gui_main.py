@@ -12,9 +12,26 @@ from source.extended_funcinfo import ExtendedFuncInfo
 from datetime import datetime
 
 
+class ClickableLabel(QLabel):
+    """可点击的标签类"""
+    def __init__(self, text, fund_object=None, parent=None):
+        super().__init__(text, parent)
+        self.fund_object = fund_object
+        self.setCursor(Qt.PointingHandCursor)  # 设置鼠标悬停时的光标
+        
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton and self.fund_object is not None:
+            # 调用基金对象的plot_fund方法
+            try:
+                self.fund_object.plot_fund()
+            except Exception as e:
+                print(f"绘图时出错: {e}")
+        super().mousePressEvent(event)
+
+
 class FundDataWorker(QThread):
     """基金数据刷新工作线程 - 单独的数据处理线程，与GUI线程分离"""
-    data_ready = pyqtSignal(list)  # 返回完整的基金数据列表
+    data_ready = pyqtSignal(list)  # 返回完整的基金数据列
     progress_update = pyqtSignal(str)  # 进度更新信号
     fund_processed = pyqtSignal(str, dict)  # 单个基金处理完成信号 (基金代码, 基金信息字典)
     
@@ -535,10 +552,11 @@ class MainWindow(QWidget):
             name_code_layout.setContentsMargins(5, 3, 5, 3)
             name_code_layout.setSpacing(2)  # 增加名称和代码之间的间距
             
-            # 基金名称
-            name_label = QLabel(fund.info_dict.get('name', ''))
+            # 基金名称（使用可点击标签）
+            name_label = ClickableLabel(fund.info_dict.get('name', ''), fund)
             name_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-            name_label.setStyleSheet("font-family: Futura; font-size: 18px; font-weight: bold; background-color: transparent; margin: 0; padding: 2px 0;")
+            name_label.setStyleSheet("font-family: Futura; font-size: 18px; font-weight: bold; background-color: transparent; margin: 0; padding: 2px 0; color: #0066cc;")
+            name_label.setToolTip("点击查看基金图表")  # 添加提示信息
             name_code_layout.addWidget(name_label)
             
             # 基金代码（缩小字号）

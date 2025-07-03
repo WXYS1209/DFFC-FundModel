@@ -4,6 +4,7 @@ import numpy as np
 import copy
 from datetime import datetime
 from .stock_net_value_crawler import StockNetValueCrawler
+import matplotlib.pyplot as plt
 
 class ExtendedFuncInfo(FuncInfo):
     """
@@ -273,3 +274,40 @@ class ExtendedFuncInfo(FuncInfo):
             delta_percentage= (float(len([x for x in sublist if x < self.factor_holtwinters_estimate_delta])) / float(len(sublist))) * 2 - 1
             self.factor_holtwinters_estimate_delta_percentage = delta_percentage
         return copy.deepcopy(self.factor_holtwinters_delta_percentage)
+    
+    def plot_fund(self):
+        """
+        绘制基金的原始净值、HoltWinters平滑值和估计值的图表
+        """
+        plt.figure(figsize=(12, 6))
+        plt.plot(self._date_ls, self._unit_value_ls, label='Original Unit Values', color='blue', linewidth=1)
+        plt.plot(self._date_ls, self.factor_holtwinters, label='HoltWinters Smoothed', color='red', linewidth=1)
+        plt.plot(self._date_ls, self.factor_holtwinters_delta_percentage,
+                 label='HoltWinters Delta Percentage', color='green', linewidth=1)
+        # 添加估计值点和注释
+        if hasattr(self, 'estimate_value') and self.estimate_value is not None:
+            plt.scatter([self.estimate_datetime], [self.estimate_value],
+                       color='orange', s=20, marker='o', zorder=5, edgecolors='black', linewidth=2,
+                       label=f'Estimate Value: {self.estimate_value:.4f}')
+            plt.annotate(f'Est: {self.estimate_value:.4f}',
+                         xy=(self.estimate_datetime, self.estimate_value),
+                         xytext=(10, 10), textcoords='offset points',
+                         bbox=dict(boxstyle='round,pad=0.3', facecolor='orange', alpha=0.7),
+                         fontsize=10)
+        if hasattr(self, 'factor_holtwinters_estimate') and self.factor_holtwinters_estimate is not None:
+            plt.scatter([self.estimate_datetime], [self.factor_holtwinters_estimate],
+                       color='purple', s=20, marker='s', zorder=5, edgecolors='black', linewidth=2,
+                       label=f'HW Estimate: {self.factor_holtwinters_estimate:.4f}')
+            plt.annotate(f'HW Est: {self.factor_holtwinters_estimate:.4f}',
+                         xy=(self.estimate_datetime, self.factor_holtwinters_estimate),
+                         xytext=(10, -10), textcoords='offset points',
+                         bbox=dict(boxstyle='round,pad=0.3', facecolor='purple', alpha=0.7),
+                         fontsize=10, color='white')
+        plt.title(f'Fund {self.code}: Original vs HoltWinters Smoothed Values')
+        plt.xlabel('Date')
+        plt.ylabel('Unit Value')
+        plt.legend()
+        plt.xticks(rotation=45)
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
+        plt.show()
