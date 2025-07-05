@@ -19,14 +19,13 @@ class StrategyExample(BackTestFuncInfo):
     def __init__(self, fund_list, start_date, end_date):
         super().__init__(fund_list, start_date, end_date)
         # 自定义交易参数
-        # 交易阈值
         self.buy_threshold1 = -0.9  
         self.buy_threshold2 = -0.85 
         self.sell_threshold1 = 1.1  
         self.sell_threshold2 = 0.5
         self.drawdown_threshold = 0.04  # 止损阈值2%
         #持仓参数
-        self.cube_size = 1 # 每次交易的份额大小
+        self.cube_size = 4  # 每次交易的份额大小
 
         # 计算使用参数
         self.order_list = []
@@ -100,7 +99,7 @@ class StrategyExample(BackTestFuncInfo):
                 continue
 
             # 检查是否有足够的数据进行分析
-            if len(self.strategy_unit_value_list[fund_number]) < 100:
+            if len(self.strategy_unit_value_list[fund_number]) < 150:
                 continue
             
             # 如果当前基金没有持仓，则判断是否需要买入
@@ -110,7 +109,7 @@ class StrategyExample(BackTestFuncInfo):
                     (self.strategy_factor_list[fund_number][0] > self.buy_threshold2 and #买入条件2
                     self.strategy_factor_list[fund_number][1] < self.buy_threshold2))):
                 # 满足买入条件，买入基金
-                    cash_amount = deepcopy(self.current_asset[1][0])/ (self.cube_size-self.hold_num) # 每次买入的现金量
+                    cash_amount =0.99999* deepcopy(self.current_asset[1][0])/ (self.cube_size-self.hold_num) # 每次买入的现金量
                     operation_list.append([0, fund_number+1, cash_amount, cash_amount])  # 买入基金
                     self.fund_list_situation[fund_number] = True  # 更新基金持仓状态
                     buy_num += 1  # 更新持仓数量
@@ -142,6 +141,22 @@ class StrategyExample(BackTestFuncInfo):
 
 if __name__ == "__main__":
     print("==========================================================")
+    # 上证综指 ===============================================================
+    fundmain = ExtendedFuncInfo(code='011320', name='国泰上证综指ETF联接')
+    fundmain.factor_holtwinters_parameter = {'alpha': 0.1018, 'beta': 0.00455, 'gamma': 0.0861, 'season_length': 13}
+    fundmain.load_data_net()  # 从网络加载数据
+    fundmain.factor_cal_holtwinters()
+    fundmain.factor_cal_holtwinters_delta_percentage()
+    fundmain.set_info_dict()
+
+    # 华夏阿尔法精选混合 ===============================================================
+    fund1 = ExtendedFuncInfo(code='011937', name='华夏阿尔法精选混合')
+    fund1.factor_holtwinters_parameter = {'alpha': 0.0941, 'beta': 0.02156, 'gamma': 0.1914, 'season_length': 16}
+    fund1.load_data_net()  # 从网络加载数据
+    fund1.factor_cal_holtwinters()
+    fund1.factor_cal_holtwinters_delta_percentage()
+    fund1.set_info_dict()
+
     # 大摩数字经济混合A ===============================================================
     fund2 = ExtendedFuncInfo(code='017102', name='大摩数字经济混合A')
     fund2.factor_holtwinters_parameter = {'alpha': 0.1045, 'beta': 0.01346, 'gamma': 0.04151, 'season_length': 24}
@@ -149,9 +164,41 @@ if __name__ == "__main__":
     fund2.factor_cal_holtwinters()
     fund2.factor_cal_holtwinters_delta_percentage()
 
+    # 鹏华优选回报灵活配置混合C ===============================================================
+    fund3 = ExtendedFuncInfo(code='012997', name='鹏华优选回报灵活配置混合C')
+    fund3.factor_holtwinters_parameter = {'alpha': 0.1280, 'beta': 0.007697, 'gamma': 0.1855, 'season_length': 16}
+    fund3.load_data_net()  # 从网络加载数据
+    fund3.factor_cal_holtwinters()
+    fund3.factor_cal_holtwinters_delta_percentage()
+    fund3.set_info_dict()
+
+    # 申万菱信消费增长混合C ===============================================================
+    fund4 = ExtendedFuncInfo(code='015254', name='申万菱信消费增长混合C')
+    fund4.factor_holtwinters_parameter = {'alpha': 0.11077, 'beta': 0.02186, 'gamma': 0.4113, 'season_length': 16}
+    fund4.load_data_net()  # 从网络加载数据
+    fund4.factor_cal_holtwinters()
+    fund4.factor_cal_holtwinters_delta_percentage()
+    fund4.set_info_dict()
+
+    # 华夏中证港股通内地金融ETF联接C ===============================================================
+    fund5 = ExtendedFuncInfo(code='020423', name='华夏中证港股通内地金融ETF联接C', estimate_info={'code': '513190', 'type': 'fund'})
+    fund5.factor_holtwinters_parameter = {'alpha': 0.05508, 'beta': 0.016598, 'gamma': 0.12826, 'season_length': 24}
+    fund5.load_data_net()  # 从网络加载数据
+    fund5.factor_cal_holtwinters()
+    fund5.factor_cal_holtwinters_delta_percentage()
+    fund5.set_info_dict()
+
+    # 大摩沪港深精选混合A ===============================================================
+    fund8 = ExtendedFuncInfo(code='013356', name='大摩沪港深精选混合A')
+    fund8.factor_holtwinters_parameter = {'alpha': 0.117, 'beta': 0.009484, 'gamma': 0.05293, 'season_length': 20}
+    fund8.load_data_net()  # 从网络加载数据
+    fund8.factor_cal_holtwinters()
+    fund8.factor_cal_holtwinters_delta_percentage()
+    fund8.set_info_dict()
+    print("==========================================================")
 
     # 运行策略回测
-    strategy = StrategyExample(fund_list=[fund2], start_date=datetime(2023, 1, 1), end_date=datetime(2025, 6, 12))
+    strategy = StrategyExample(fund_list=[fundmain, fund1, fund2, fund3, fund4, fund5, fund8], start_date=datetime(2024, 6, 1), end_date=datetime(2025, 6, 1))
     strategy.run()
     
     # 绘制总价值变化曲线
@@ -166,7 +213,7 @@ if __name__ == "__main__":
         ax1.set_title('各基金净值变化曲线', fontsize=16, fontweight='bold')
         
         # 绘制每个基金的净值曲线
-        fund_list = [fund2]
+        fund_list = [fundmain, fund1, fund2, fund3, fund4, fund5, fund8]
         colors = ['blue', 'green', 'red', 'orange', 'purple', 'brown', 'pink', 'gray']
         
         for i, fund in enumerate(fund_list):

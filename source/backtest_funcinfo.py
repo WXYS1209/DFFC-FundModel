@@ -107,7 +107,7 @@ class BackTestFuncInfo:
         unitprice_list = [1] #现金单位净值为1
         for i in range(len(self.fund_list)):
             fund = self.fund_list[i]
-            if i in self.nonefund_list:
+            if i+1 in self.nonefund_list:
                 unitprice_list.append(None)  # 无数据基金单位净值为None
             else:
                 index = fund._date2idx_map[self.current_date.strftime("%Y-%m-%d")]
@@ -132,6 +132,7 @@ class BackTestFuncInfo:
             buyfund = self.trade_today[i][1]  # 买入基金索引
             sellshares = self.trade_today[i][2]  # 卖出基金份额
             price = self.trade_today[i][3]  # 买入基金价格
+
             if type(sellfund) is not int or type(buyfund) is not int:
                 self.log.append(f"Error: Invalid fund index at {self.current_date.strftime('%Y-%m-%d')}")
                 return False
@@ -201,7 +202,10 @@ class BackTestFuncInfo:
     # 只保留当前日期之前的数据，避免策略函数使用未来数据
     def cal_strategy_list(self):
         """构建可供策略函数使用的基金信息列表"""
-        self.strategy_list = []
+        # 初始化策略可以使用的相关列表，None表示没有数据
+        self.strategy_unit_value_list = []  # 用于存储每个基金的单位净值列表
+        self.strategy_date_list = []  # 用于存储每个基金的日期列表
+        self.strategy_factor_list = []  # 用于存储每个基金的holtwinters_delta_percentage数据
         for fund in self.fund_list:
             # 复制基金信息，避免直接修改原始数据
             fund_info = deepcopy(fund)
@@ -209,13 +213,18 @@ class BackTestFuncInfo:
             date_str = self.current_date.strftime("%Y-%m-%d")
             if date_str in fund_info._date2idx_map:
                 idx = fund_info._date2idx_map[date_str]
-                limit_unit_value_ls = fund_info._unit_value_ls[idx:]
-                limit_date_ls = fund_info._date_ls[idx:]
-                limit_holtwinters_delta_percentage = fund_info.factor_holtwinters_delta_percentage[idx:]
-                self.strategy_list.append([limit_date_ls, limit_unit_value_ls, limit_holtwinters_delta_percentage])
+                # 如果有数据，则复制相关数据
+                limit_unit_value_ls = deepcopy(fund_info._unit_value_ls[idx:])
+                limit_date_ls = deepcopy(fund_info._date_ls[idx:])
+                limit_holtwinters_delta_percentage = deepcopy(fund_info.factor_holtwinters_delta_percentage[idx:])
+                self.strategy_unit_value_list.append(limit_unit_value_ls)  # 存储单位净值列表
+                self.strategy_date_list.append(limit_date_ls)  # 存储日期列表
+                self.strategy_factor_list.append(limit_holtwinters_delta_percentage)  # 存储holtwinters_delta_percentage数据
             else:
                 # 如果没有数据，则清空相关数据
-                self.strategy_list.append(None)
+                self.strategy_unit_value_list.append(None)
+                self.strategy_date_list.append(None)
+                self.strategy_factor_list.append(None)
 
     def run(self):
         """运行回测"""
@@ -234,13 +243,13 @@ class BackTestFuncInfo:
             for i in range(len(self.fund_list)):
                 fund = self.fund_list[i]
                 if self.current_date.strftime("%Y-%m-%d") not in fund._date2idx_map:
-                    self.nonefund_list.append(i)
+                    self.nonefund_list.append(i+1)
             if len(self.nonefund_list) == len(self.fund_list):
                 # 非交易日：果所有基金都没有数据，则跳过当前日期
                 self.current_date += timedelta(days=1)
                 continue
             # 2.0 删减数据，构建可以给策略函数使用的func_info，防止策略函数使用未来数据
-            # 构建可供策略函数使用的基金信息self.strategy_list
+            # 构建可供策略函数使用的基金信息self.strategy_list*
             self.cal_strategy_list()
 
             # 2. 运行策略函数，从基金数据生成当日交易列表trade_today

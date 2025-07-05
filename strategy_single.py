@@ -75,28 +75,26 @@ class StrategyExample(BackTestFuncInfo):
         # 判断是否持仓，如果持仓进入是否卖出判断，如果非持仓进入买入判断
         nowdate = deepcopy(self.current_date)
         if not self.hold:
-            if self.strategy_list[0][2][0] < self.buy_threshold1 or (self.strategy_list[0][2][0] > self.buy_threshold2 and self.strategy_list[0][2][1] < self.buy_threshold2):
+            if self.strategy_factor_list[0][0] < self.buy_threshold1 or (self.strategy_factor_list[0][0] > self.buy_threshold2 and self.strategy_factor_list[0][1] < self.buy_threshold2):
                 # 满足买入条件，买入第一支基金
                 cash_amount = deepcopy(self.current_asset[1][0])
-                self.highest_value = deepcopy(self.strategy_list[0][1][0])  # 初始化最高净值为当前净值
+                self.highest_value = deepcopy(self.strategy_unit_value_list[0][0])  # 初始化最高净值为当前净值
                 self.hold = True  # 设置持仓状态
                 return [nowdate, [0, 1, cash_amount, cash_amount]]
             else:
                 return None
         else:
             # 判断是否止损条件并且更新最高值
-            nowunitvalue = self.strategy_list[0][1][0]
+            nowunitvalue = self.strategy_unit_value_list[0][0]
             if nowunitvalue > self.highest_value:
                 self.highest_value = deepcopy(nowunitvalue)
-            # 如果当前净值回撤超过2%，且当前不符合买入条件：卖出
-            if self.highest_value * (1 - self.drawdown_threshold) > nowunitvalue and \
-               not (self.strategy_list[0][2][0] < self.buy_threshold1 or (self.strategy_list[0][2][0] > self.buy_threshold2 and self.strategy_list[0][2][1] < self.buy_threshold2)):
-                fund_shares = deepcopy(self.current_asset[1][1]) # 卖出第一支基金的份额
-                self.hold = False  # 设置非持仓状态
-                return [nowdate, [1, 0, fund_shares, nowunitvalue* fund_shares]]
-
-            # 判断卖出条件
-            if self.strategy_list[0][2][0] > self.sell_threshold1 or (self.strategy_list[0][2][0] < self.sell_threshold2 and self.strategy_list[0][2][1] > self.sell_threshold2):
+            # 判断卖出条件：
+            # 1. 止损条件 
+            # 2. 卖出阈值1 
+            # 3. 卖出阈值2
+            if self.highest_value * (1 - self.drawdown_threshold) > nowunitvalue or \
+                self.strategy_factor_list[0][0] > self.sell_threshold1 or \
+                (self.strategy_factor_list[0][0] < self.sell_threshold2 and self.strategy_factor_list[0][1] > self.sell_threshold2):
                 fund_shares = deepcopy(self.current_asset[1][1])  # 卖出第一支基金的份额
                 self.hold = False  # 设置非持仓状态
                 return [nowdate, [1, 0, fund_shares, nowunitvalue* fund_shares]]
@@ -110,12 +108,13 @@ if __name__ == "__main__":
     print("==========================================================")
     fundmain = ExtendedFuncInfo(code='011320', name='国泰上证综指ETF联接')
     fundmain.factor_holtwinters_parameter = {'alpha': 0.1018, 'beta': 0.00455, 'gamma': 0.0861, 'season_length': 13}
+    fundmain.load_data_net()  # 从网络加载数据
     fundmain.factor_cal_holtwinters()
     fundmain.factor_cal_holtwinters_delta_percentage()
     fundmain.set_info_dict()
     print("==========================================================")
 
     # 运行策略回测
-    strategy = StrategyExample(fund_list=[fundmain], start_date=datetime(2023, 1, 1), end_date=datetime(2025, 1, 1))
+    strategy = StrategyExample(fund_list=[fundmain], start_date=datetime(2023, 1, 1), end_date=datetime(2025, 5, 1))
     strategy.run()
     strategy.plot_result()
