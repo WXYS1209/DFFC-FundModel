@@ -277,32 +277,30 @@ class BackTestFuncInfo:
         if not self.asset_list:
             print("没有回测数据可供绘制")
             return
-            
-        # 创建完整的日期范围（从start_date到end_date）
-        all_dates = []
-        current_date = self.start_date
-        while current_date <= self.end_date:
-            all_dates.append(current_date)
-            current_date += timedelta(days=1)
         
-        # 创建资产日期到索引的映射
-        asset_dates = [asset[0] for asset in self.asset_list]
-        asset_date_to_idx = {date: idx for idx, date in enumerate(asset_dates)}
+        # 绘制总价值变化曲线
+        dates = [record[0] for record in self.asset_list]
+        total_values = [sum(record[3]) for record in self.asset_list]
         
-        # 创建图形和子图
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10))
-        fig.suptitle('基金回测结果', fontsize=16, fontweight='bold')
+        # 创建上下两个子图
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 12))
         
-        # 上图：基金净值走势和交易点
-        ax1.set_title('基金净值走势及交易点', fontsize=14)
+        # 上图：所有基金的净值曲线
+        ax1.set_title('各基金净值变化曲线', fontsize=16, fontweight='bold')
         
         # 绘制每个基金的净值曲线
-        for i, fund in enumerate(self.fund_list):
+        fund_list = self.fund_list
+        colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', 
+                 '#bcbd22', '#17becf', '#aec7e8', '#ffbb78', '#98df8a', '#ff9896', '#c5b0d5', '#c49c94',
+                 '#f7b6d3', '#c7c7c7', '#dbdb8d', '#9edae5', '#393b79', '#637939', '#8c6d31', '#843c39',
+                 '#7b4173', '#bd9e39', '#ad494a', '#8ca252', '#b5cf6b', '#cedb9c']
+        
+        for i, fund in enumerate(fund_list):
             fund_dates = []
             fund_values = []
             
             # 获取基金在整个时间段的净值数据
-            for date in all_dates:
+            for date in dates:
                 date_str = date.strftime("%Y-%m-%d")
                 if date_str in fund._date2idx_map:
                     fund_dates.append(date)
@@ -310,89 +308,95 @@ class BackTestFuncInfo:
                     fund_values.append(fund._unit_value_ls[idx])
             
             if fund_dates and fund_values:
-                # 原始净值曲线
-                ax1.plot(fund_dates, fund_values, label=f'基金{i+1}: {fund.name}', linewidth=2)
-                # 绘制 Holt-Winters 平滑线
-                hw_dates, hw_vals = [], []
-                for date in fund_dates:
-                    ds = date.strftime('%Y-%m-%d')
-                    idx = fund._date2idx_map.get(ds)
-                    if idx is not None and idx < len(fund.factor_holtwinters):
-                        hw_dates.append(date)
-                        hw_vals.append(fund.factor_holtwinters[idx])
-                if hw_vals and hw_dates:
-                    ax1.plot(hw_dates, hw_vals, '--', label=f'基金{i+1} Holt-Winters', linewidth=1)
-        
-        # 标注交易点
+                color = colors[i % len(colors)]
+                ax1.plot(fund_dates, fund_values, linewidth=1.0, color=color, 
+                        label=f'{fund.name} ({fund.code})', alpha=0.8)
+        # 在基金净值图上标注买入卖出点
         for trade in self.trade_list:
             trade_date = trade[0]
+            
+            # 检查交易类型
             for j in range(1, len(trade)):
                 sellfund = trade[j][0]
                 buyfund = trade[j][1]
                 
-                # 获取交易日期的净值用于标注
-                date_str = trade_date.strftime("%Y-%m-%d")
+                if sellfund == 0:  # 买入操作（卖出现金买入基金）
+                    fund_idx = buyfund - 1  # 基金索引
+                    if fund_idx < len(fund_list):
+                        fund = fund_list[fund_idx]
+                        date_str = trade_date.strftime("%Y-%m-%d")
+                        if date_str in fund._date2idx_map:
+                            idx = fund._date2idx_map[date_str]
+                            fund_value = fund._unit_value_ls[idx]
+                            ax1.scatter(trade_date, fund_value, color='#f0334f', marker='o', s=15, alpha=0.9, zorder=6, edgecolors='white', linewidth=0.3)
                 
-                # 标注卖出点（红色向下三角）
-                if sellfund > 0:  # 不是现金
-                    fund = self.fund_list[sellfund-1]
-                    if date_str in fund._date2idx_map:
-                        idx = fund._date2idx_map[date_str]
-                        # 获取第一个有效净值作为基准
-                        first_value = None
-                        for date in all_dates:
-                            date_str_first = date.strftime("%Y-%m-%d")
-                            if date_str_first in fund._date2idx_map:
-                                first_idx = fund._date2idx_map[date_str_first]
-                                first_value = fund._unit_value_ls[first_idx]
-                                break
-                        if first_value:
-                            hw_val = fund._unit_value_ls[idx]
-                            ax1.scatter(trade_date, hw_val, color='red', marker='v', s=50, zorder=5)
-                
-                # 标注买入点（绿色向上三角）
-                if buyfund > 0:  # 不是现金
-                    fund = self.fund_list[buyfund-1]
-                    if date_str in fund._date2idx_map:
-                        idx = fund._date2idx_map[date_str]
-                        # 获取第一个有效净值作为基准
-                        first_value = None
-                        for date in all_dates:
-                            date_str_first = date.strftime("%Y-%m-%d")
-                            if date_str_first in fund._date2idx_map:
-                                first_idx = fund._date2idx_map[date_str_first]
-                                first_value = fund._unit_value_ls[first_idx]
-                                break
-                        if first_value:
-                            hw_val = fund._unit_value_ls[idx]
-                            ax1.scatter(trade_date, hw_val, color='green', marker='^', s=50, zorder=5)
+                elif buyfund == 0:  # 卖出操作（卖出基金买入现金）
+                    fund_idx = sellfund - 1  # 基金索引
+                    if fund_idx < len(fund_list):
+                        fund = fund_list[fund_idx]
+                        date_str = trade_date.strftime("%Y-%m-%d")
+                        if date_str in fund._date2idx_map:
+                            idx = fund._date2idx_map[date_str]
+                            fund_value = fund._unit_value_ls[idx]
+                            ax1.scatter(trade_date, fund_value, color='#1274fd', marker='o', s=15, alpha=0.9, zorder=6, edgecolors='white', linewidth=0.3)
         
-        ax1.set_xlabel('日期')
-        ax1.set_ylabel('净值')
-        ax1.legend()
+        ax1.set_xlabel('日期', fontsize=12)
+        ax1.set_ylabel('净值', fontsize=12)
+        
+        # 添加买入卖出点的图例说明
+        import matplotlib.patches as mpatches
+        buy_patch = mpatches.Patch(color='#f0334f', label='买入点')
+        sell_patch = mpatches.Patch(color='#1274fd', label='卖出点')
+        
+        # 获取原有的图例
+        handles, labels = ax1.get_legend_handles_labels()
+        handles.extend([buy_patch, sell_patch])
+        labels.extend(['买入点', '卖出点'])
+        
+        ax1.legend(handles=handles, labels=labels, bbox_to_anchor=(1.05, 1), loc='upper left')
         ax1.grid(True, alpha=0.3)
-        ax1.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
-        ax1.xaxis.set_major_locator(mdates.MonthLocator())
-        plt.setp(ax1.xaxis.get_majorticklabels(), rotation=45)
+        ax1.tick_params(axis='x', rotation=45)
         
-        # 下图：总资产变化曲线
-        ax2.set_title('总资产变化曲线', fontsize=14)
-        # 计算总资产列表
-        dates = [record[0] for record in self.asset_list]
-        total_asset_values = []
-        for record in self.asset_list:
-            total_asset_values.append(sum(record[3]))
-        ax2.plot(dates, total_asset_values, label='总资产', linewidth=2, color='black')
-        ax2.set_xlabel('日期')
-        ax2.set_ylabel('资产价值')
+        # 下图：策略总价值变化曲线
+        ax2.plot(dates, total_values, linewidth=1.5, color='blue', label='策略总价值')
+        ax2.axhline(y=1.0, color='red', linestyle='--', alpha=0.7, label='初始价值')
+        
+        # 标注买入卖出点
+        for trade in self.trade_list:
+            trade_date = trade[0]
+            # 在asset_list中找到对应日期的总价值
+            for record in self.asset_list:
+                if record[0] == trade_date:
+                    total_value = sum(record[3])
+                    
+                    # 检查交易类型
+                    for j in range(1, len(trade)):
+                        sellfund = trade[j][0]
+                        buyfund = trade[j][1]
+                        
+                        if sellfund == 0:  # 买入操作（卖出现金）
+                            ax2.scatter(trade_date, total_value, color='green', marker='^', s=30, alpha=0.8, zorder=5)
+                        elif buyfund == 0:  # 卖出操作（买入现金）
+                            ax2.scatter(trade_date, total_value, color='red', marker='v', s=30, alpha=0.8, zorder=5)
+                    break
+        
+        ax2.set_title('策略回测总价值变化曲线', fontsize=16, fontweight='bold')
+        ax2.set_xlabel('日期', fontsize=12)
+        ax2.set_ylabel('总价值', fontsize=12)
         ax2.legend()
         ax2.grid(True, alpha=0.3)
-        ax2.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
-        ax2.xaxis.set_major_locator(mdates.MonthLocator())
-        plt.setp(ax2.xaxis.get_majorticklabels(), rotation=45)
-        # 调整布局
+        ax2.tick_params(axis='x', rotation=45)
+        
+        # 显示最终收益率
+        initial_value = 1.0
+        final_value = total_values[-1] if total_values else 1.0
+        total_return = (final_value - initial_value) / initial_value * 100
+        ax2.text(0.02, 0.98, f'总收益率: {total_return:.2f}%', 
+                transform=ax2.transAxes, fontsize=12, 
+                bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8),
+                verticalalignment='top')
+        
         plt.tight_layout()
-        # 显示图表
         plt.show()
         
 if __name__ == "__main__":

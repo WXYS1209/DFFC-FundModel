@@ -218,7 +218,7 @@ def compute_optimize_result(end_day, original_data):
 # %%
 # 测试新函数（仅供调试，可删除）
 if __name__ == "__main__":
-    fundcode= '010365'
+    fundcode= '021483'
 
     # 主执行部分：创建一个 FuncInfo 实例，加载特定日期范围内的数据，打印一些值，并将数据导出到CSV文件
     j = FuncInfo(code=fundcode, name="")
