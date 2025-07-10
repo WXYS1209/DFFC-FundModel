@@ -108,7 +108,11 @@ class BackTestFuncInfo:
         for i in range(len(self.fund_list)):
             fund = self.fund_list[i]
             if i+1 in self.nonefund_list:
-                unitprice_list.append(None)  # 无数据基金单位净值为None
+                finddate = self.current_date
+                while finddate.strftime("%Y-%m-%d") not in fund._date2idx_map:
+                    finddate -= timedelta(days=1)  # 向前查找最近的交易日
+                index = fund._date2idx_map[finddate.strftime("%Y-%m-%d")]
+                unitprice_list.append(fund._unit_value_ls[index])  # 获取最近交易日的基金单位净值
             else:
                 index = fund._date2idx_map[self.current_date.strftime("%Y-%m-%d")]
                 unitprice_list.append(fund._unit_value_ls[index])  # 获取基金单位净值        # 1. 如果当日没有交易操作，则直接复制更新资产列表
@@ -133,6 +137,7 @@ class BackTestFuncInfo:
             sellshares = self.trade_today[i][2]  # 卖出基金份额
             price = self.trade_today[i][3]  # 买入基金价格
 
+            # 检查交易的基金是否是1整数且2存在且3买入卖出不是同一只基金
             if type(sellfund) is not int or type(buyfund) is not int:
                 self.log.append(f"Error: Invalid fund index at {self.current_date.strftime('%Y-%m-%d')}")
                 return False
@@ -142,11 +147,13 @@ class BackTestFuncInfo:
             if sellfund == buyfund:
                 self.log.append(f"Error: Cannot buy and sell the same fund at {self.current_date.strftime('%Y-%m-%d')}")
                 return False
-            if not isinstance(sellshares, (int, float)) or not isinstance(price, (int, float)) or sellshares < 0 or price < 0:
-                self.log.append(f"Error: Invalid shares or price at {self.current_date.strftime('%Y-%m-%d')}")
-                return False
+            # 检查交易的基金是否在无数据基金列表中
             if sellfund in self.nonefund_list or buyfund in self.nonefund_list:
                 self.log.append(f"Error: Cannot trade fund with no data at {self.current_date.strftime('%Y-%m-%d')}")
+                return False
+            # 检查交易的份额和价格是否是数字且大于0
+            if not isinstance(sellshares, (int, float)) or not isinstance(price, (int, float)) or sellshares < 0 or price < 0:
+                self.log.append(f"Error: Invalid shares or price at {self.current_date.strftime('%Y-%m-%d')}")
                 return False
 
         # 2. 如果当日有交易操作，则进行交易操作

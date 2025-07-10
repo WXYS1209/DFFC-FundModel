@@ -19,9 +19,9 @@ class StrategyExample(BackTestFuncInfo):
         self.buy_threshold2 = -0.85 
         self.sell_threshold1 = 1.1 
         self.sell_threshold2 = 1.1
-        self.drawdown_threshold = 0.02  # 止损阈值2%
+        self.drawdown_threshold = 0.1  # 止损阈值2%
         #持仓参数
-        self.cube_size = 3  # 每次交易的份额大小
+        self.cube_size = 2  # 每次交易的份额大小
 
         # 计算使用参数
         self.order_list = []
@@ -62,9 +62,7 @@ class StrategyExample(BackTestFuncInfo):
             # 如果当前基金没有持仓，则判断是否需要买入
             if not self.fund_list_situation[fund_number]:
                 if (self.hold_num + buy_num < self.cube_size and # 还有卫星仓位份
-                    ((self.strategy_factor_list[fund_number][0] < self.buy_threshold1) or #买入条件1
-                    (self.strategy_factor_list[fund_number][0] > self.buy_threshold2 and #买入条件2
-                    self.strategy_factor_list[fund_number][1] < self.buy_threshold2))):
+                    ((self.strategy_unit_value_list[fund_number][0] > self.strategy_unit_value_list[fund_number][20]))):
                 # 满足买入条件，买入基金
                     cash_amount = deepcopy(self.current_asset[1][0])/ (self.cube_size-self.hold_num) # 每次买入的现金量
                     operation_list.append([0, fund_number+1, cash_amount, cash_amount])  # 买入基金
@@ -77,9 +75,7 @@ class StrategyExample(BackTestFuncInfo):
                     # 更新当前基金的最高净值
                     self.maxunit_list[fund_number] = self.strategy_unit_value_list[fund_number][0]
             # 计算最高点净值
-                if (self.strategy_factor_list[fund_number][0] > self.sell_threshold1 or #卖出条件1
-                    (self.strategy_factor_list[fund_number][0] < self.sell_threshold2 and #卖出条件2
-                    self.strategy_factor_list[fund_number][1] > self.sell_threshold2) or
+                if ((self.strategy_unit_value_list[fund_number][0] < self.strategy_unit_value_list[fund_number][20]) or
                     # 止损条件
                     (self.maxunit_list[fund_number] - self.strategy_unit_value_list[fund_number][0]) / self.maxunit_list[fund_number] > self.drawdown_threshold):
                     # 满足卖出条件，卖出基金
