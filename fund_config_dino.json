@@ -1,0 +1,70 @@
+[
+  {
+    "code": "019736",
+    "name": "广发纳斯达克100ETF联接A",
+    "params": {
+      "alpha": 0.1327,
+      "beta": 0.0017,
+      "gamma": 0.0896,
+      "season_length": 23
+    },
+    "fund_type": "long",
+    "tag": "美股"
+  },
+  {
+    "code": "017437",
+    "name": "华宝纳斯达克精选股票C",
+    "params": {
+      "alpha": 0.1445,
+      "beta": 0.01035,
+      "gamma": 0.086457,
+      "season_length": 23 
+    },
+    "fund_type": "long",
+    "tag": "美股"
+  },
+  {
+    "code": "002963",
+    "name": "易方达黄金ETF联接C",
+    "params": {
+      "alpha": 0.111,
+      "beta": 0.00609,
+      "gamma": 0.0277,
+      "season_length": 14
+    },
+    "estimate_info": {
+      "code": "159934",
+      "type": "fund"
+    },
+    "fund_type": "long",
+    "tag": "黄金"
+  },
+  {
+    "code": "007467",
+    "name": "华泰柏瑞中证红利低波动ETF联接C",
+    "params": {
+      "alpha": 0.08776,
+      "beta": 0.05789,
+      "gamma": 0.09095,
+      "season_length":17 
+    },
+    "estimate_info": {
+      "code": "512890",
+      "type": "fund"
+    },
+    "fund_type": "long",
+    "tag":"红利"
+  },
+  {
+    "code": "010365",
+    "name": "鹏华香港银行指数C",
+    "params": {
+      "alpha": 0.08556,
+      "beta": 0.008841,
+      "gamma": 0.2153,
+      "season_length": 21
+    },
+    "fund_type": "long",
+    "tag": "红利港股"
+  }
+]
