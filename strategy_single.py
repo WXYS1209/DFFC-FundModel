@@ -111,7 +111,8 @@ if __name__ == "__main__":
     print("==========================================================")
     fundmain = ExtendedFuncInfo(code='011320', name='国泰上证综指ETF联接')
     fundmain.factor_holtwinters_parameter = {'alpha': 0.1018, 'beta': 0.00455, 'gamma': 0.0861, 'season_length': 13}
-    fundmain.load_data_net()  # 从网络加载数据
+    #fundmain.load_data_net()  # 从网络加载数据
+    fundmain.load_data_csv("./csv_data/011320.csv")  # 从本地CSV文件加载数据
     fundmain.factor_cal_holtwinters()
     fundmain.factor_cal_holtwinters_delta_percentage()
     fundmain.set_info_dict()

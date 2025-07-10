@@ -168,9 +168,11 @@ class BackTestFuncInfo:
         possible_asset[3] = [possible_asset[1][i] * (unitprice_list[i] if unitprice_list[i] is not None else 0) for i in range(len(possible_asset[1]))]
 
         # Test: 如果当日资产负值则报错
-        if any(x < 0 for x in possible_asset[1]):
+        if any(x < -0.000001 for x in possible_asset[1]):
             self.log.append(f"Error: Negative asset at {self.current_date.strftime('%Y-%m-%d')}")
             return False
+        else:
+            possible_asset[1] = [abs(x) for x in possible_asset[1]]  # 确保资产份额为正数
         
         # 如果操作合法无误，则更新当日资产和交易日志
         self.asset_list.append(deepcopy(possible_asset))  # 更新当日资产

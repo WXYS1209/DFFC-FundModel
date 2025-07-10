@@ -2,6 +2,8 @@ from .fund_info import FuncInfo
 import pandas as pd
 import numpy as np
 import copy
+import json
+import os
 from datetime import datetime
 from .stock_net_value_crawler import StockNetValueCrawler
 import matplotlib.pyplot as plt
@@ -43,6 +45,104 @@ class ExtendedFuncInfo(FuncInfo):
         self._daily_growth_rate_ls = copy.deepcopy([float(x[:-1]) if x != '' else None for x in self._daily_growth_rate_ls])  # 将日增长率列表从字符串转换为浮点数（百分数）
         # 我们一直用的单位净值数据应该是累计净值，包含分红
         self._unit_value_ls = copy.deepcopy(self._cumulative_value_ls)  # 将单位净值列表设置为累计净值列表的副本
+    
+    # 从csv文件加载数据
+    def load_data_csv(self, csv_file):
+        """
+        从CSV文件加载基金数据
+        
+        Args:
+            csv_file (str): CSV文件路径
+            
+        CSV文件格式应为:
+        ,净值日期,单位净值,累计净值,日增长率,申购状态,赎回状态,分红送配
+        0,2025-06-30,1.8646,1.9391,-1.26%,开放申购,开放赎回,
+        ...
+        """
+        # 清除历史数据
+        self.clear_data_extended()
+        
+        try:
+            # 读取CSV文件
+            df = pd.read_csv(csv_file, encoding='utf-8')
+            
+            # 检查必要的列是否存在
+            required_columns = ['净值日期', '单位净值', '累计净值', '日增长率']
+            for col in required_columns:
+                if col not in df.columns:
+                    raise ValueError(f"CSV文件缺少必要的列: {col}")
+            
+            # 按日期排序，确保最新的数据在前
+            df['净值日期'] = pd.to_datetime(df['净值日期'])
+            df = df.sort_values('净值日期', ascending=False).reset_index(drop=True)
+            
+            # 提取数据到对应的列表
+            self._date_ls = [date.to_pydatetime() for date in df['净值日期']]
+            self._unit_value_ls = df['单位净值'].astype(float).tolist()
+            self._cumulative_value_ls = df['累计净值'].astype(float).tolist()
+            self._unit_value_ls = copy.deepcopy(self._cumulative_value_ls)  # 单位净值使用累计净值
+            
+            # 构建日期到索引的映射字典（参考父类的实现）
+            for idx, date in enumerate(self._date_ls):
+                date_str = date.strftime('%Y-%m-%d')
+                self._date2idx_map[date_str] = idx
+            
+            # 处理日增长率（去除百分号并转换为浮点数）
+            growth_rates = []
+            for rate in df['日增长率']:
+                if pd.isna(rate) or rate == '' or rate == '--':
+                    growth_rates.append(None)
+                else:
+                    # 去除百分号并转换为浮点数
+                    rate_str = str(rate).strip()
+                    if rate_str.endswith('%'):
+                        rate_str = rate_str[:-1]
+                    try:
+                        growth_rates.append(float(rate_str))
+                    except ValueError:
+                        growth_rates.append(None)
+            
+            self._daily_growth_rate_ls = growth_rates
+            
+            # 处理其他状态列（如果CSV中存在的话）
+            if '申购状态' in df.columns:
+                self._purchase_state_ls = df['申购状态'].fillna('').tolist()
+            else:
+                self._purchase_state_ls = [''] * len(self._date_ls)
+                
+            if '赎回状态' in df.columns:
+                self._redemption_state_ls = df['赎回状态'].fillna('').tolist()
+            else:
+                self._redemption_state_ls = [''] * len(self._date_ls)
+                
+            if '分红送配' in df.columns:
+                self._bonus_distribution_ls = df['分红送配'].fillna('').tolist()
+            else:
+                self._bonus_distribution_ls = [''] * len(self._date_ls)
+            
+            # 根据注释，我们使用累计净值作为单位净值（包含分红）
+            self._unit_value_ls = copy.deepcopy(self._cumulative_value_ls)
+            
+            print(f"成功从CSV文件加载了 {len(self._date_ls)} 条数据")
+            print(f"数据日期范围: {self._date_ls[-1].strftime('%Y-%m-%d')} 到 {self._date_ls[0].strftime('%Y-%m-%d')}")
+            
+        except Exception as e:
+            print(f"加载CSV文件时出错: {str(e)}")
+            raise
+ 
+    # 存储数据到csv文件
+    def save_data_csv(self, csv_file):
+        """
+        将当前实例的数据保存到CSV文件
+        
+        Args:
+            csv_file (str): CSV文件路径
+        """
+        # 创建DataFrame
+        df = self.get_data_frame()
+        # 保存到CSV文件
+        df.to_csv(csv_file)
+        print(f"数据已保存到 {csv_file}")
 
     # 通过爬虫获取下一日估计值
     def load_estimate_net(self):
@@ -311,3 +411,93 @@ class ExtendedFuncInfo(FuncInfo):
         plt.grid(True, alpha=0.3)
         plt.tight_layout()
         plt.show()
+    
+    @staticmethod
+    def create_fundlist_config(config_file_path, csv_data_dir=None):
+        """
+        从配置文件创建ExtendedFuncInfo实例列表
+        Args:
+            config_file_path (str): 配置文件的路径，支持相对路径和绝对路径
+            csv_data_dir (str, optional): CSV数据文件的目录路径。如果提供此参数，将自动加载对应的CSV数据；如果为None则不加载数据
+        Returns:
+            list: ExtendedFuncInfo实例的列表
+        """
+        try:
+            # 检查文件是否存在
+            if not os.path.exists(config_file_path):
+                raise FileNotFoundError(f"配置文件不存在: {config_file_path}")
+            
+            # 读取配置文件
+            with open(config_file_path, 'r', encoding='utf-8') as f:
+                config_data = json.load(f)
+            
+            # 验证配置文件格式
+            if not isinstance(config_data, list):
+                raise ValueError("配置文件格式错误：应该是包含基金信息的列表")
+            
+            fund_list = []
+            
+            for i, fund_config in enumerate(config_data):
+                try:
+                    # 验证必要字段
+                    if 'code' not in fund_config:
+                        raise ValueError(f"第{i+1}个基金配置缺少必要字段: code")
+                    
+                    # 获取基金基本信息
+                    fund_code = fund_config['code']
+                    fund_name = fund_config.get('name', '')
+                    fund_type = fund_config.get('fund_type', None)
+                    
+                    # 获取估计信息
+                    estimate_info = fund_config.get('estimate_info', {'code': '', 'type': ''})
+                    
+                    # 创建ExtendedFuncInfo实例
+                    fund_instance = ExtendedFuncInfo(
+                        estimate_info=estimate_info,
+                        code=fund_code,
+                        name=fund_name,
+                        fund_type=fund_type
+                    )
+                    
+                    # 设置HoltWinters参数
+                    if 'params' in fund_config:
+                        params = fund_config['params']
+                        fund_instance.factor_holtwinters_parameter = {
+                            'alpha': params.get('alpha', 0.1),
+                            'beta': params.get('beta', 0.01),
+                            'gamma': params.get('gamma', 0.1),
+                            'season_length': params.get('season_length', 12)
+                        }
+                    
+                    # 设置其他属性
+                    if 'tag' in fund_config:
+                        fund_instance.tag = fund_config['tag']
+                    
+                    fund_list.append(fund_instance)
+                except Exception as e:
+                    print(f"警告：创建第{i+1}个基金实例时出错 (code: {fund_config.get('code', 'unknown')}): {str(e)}")
+                    continue
+            print(f"成功从配置文件创建了 {len(fund_list)} 个基金实例")
+            # 如果提供了CSV数据目录，则加载数据
+            if csv_data_dir is not None:
+                print(f"开始加载CSV数据，数据目录: {csv_data_dir}")
+                loaded_count = 0
+                for fund_instance in fund_list:
+                    try:
+                        # 构建CSV文件路径
+                        csv_file_path = os.path.join(csv_data_dir, f"{fund_instance.code}.csv")
+                        if os.path.exists(csv_file_path):
+                            # 加载CSV数据
+                            fund_instance.load_data_csv(csv_file_path)
+                            loaded_count += 1
+                            print(f"成功加载基金 {fund_instance.code} 的CSV数据")
+                        else:
+                            print(f"警告：基金 {fund_instance.code} 的CSV文件不存在: {csv_file_path}")
+                    except Exception as e:
+                        print(f"警告：加载基金 {fund_instance.code} 的CSV数据时出错: {str(e)}")
+                        continue
+                print(f"成功加载了 {loaded_count}/{len(fund_list)} 个基金的CSV数据")
+            return fund_list
+        except Exception as e:
+            print(f"读取配置文件时出错: {str(e)}")
+            raise

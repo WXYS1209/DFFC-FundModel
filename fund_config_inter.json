@@ -1,0 +1,57 @@
+[
+  {
+    "code": "011320",
+    "name": "国泰上证综合ETF联接C",
+    "params": {
+      "alpha": 0.106,
+      "beta": 0.003622,
+      "gamma": 0.078,
+      "season_length": 18
+    },
+    "tag": "A股大盘"
+  },
+  {
+    "code": "007280",
+    "name": "摩根日本精选股票A",
+    "params": {
+      "alpha": 0.0937,
+      "beta": 0.004728,
+      "gamma": 0.026981,
+      "season_length": 22
+    },
+    "tag": "日本精选"
+  },
+  {
+    "code": "005659",
+    "name": "南方恒生ETF联接C",
+    "params": {
+      "alpha": 0.13015,
+      "beta": 0.003112,
+      "gamma": 0.00330538,
+      "season_length": 24
+    },
+    "tag": "港股大盘"
+  },
+  {
+    "code": "161815",
+    "name": "银华抗通胀主题A",
+    "params": {
+      "alpha": 0.14539,
+      "beta": 0.002194,
+      "gamma": 0.0181,
+      "season_length": 21
+    },
+    "tag": "大宗通胀"
+  },
+  {
+    "code": "015016",
+    "name": "华安国际龙头(DAX)ETF联接C",
+    "params": {
+      "alpha": 0.04368,
+      "beta": 0.025886,
+      "gamma": 0.420741,
+      "season_length": 15
+    },
+    "tag": "德国"
+  }
+]
