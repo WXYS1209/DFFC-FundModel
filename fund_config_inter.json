@@ -25,9 +25,9 @@
     "code": "005659",
     "name": "南方恒生ETF联接C",
     "params": {
-      "alpha": 0.13015,
-      "beta": 0.003112,
-      "gamma": 0.00330538,
+      "alpha": 0.1016,
+      "beta": 0.003755,
+      "gamma": 0.02797,
       "season_length": 24
     },
     "tag": "港股大盘"
