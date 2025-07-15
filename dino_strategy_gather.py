@@ -26,7 +26,8 @@ class StrategyExample(BackTestFuncInfo):
         # 建仓过程
         if nowdate == self.start_date:
             cash_amount = deepcopy(self.current_asset[1][0])  # 获取当前现金
-            operation_list.append([0, 1, cash_amount, cash_amount]) # 先全仓买入一个基金，买入份额等于当前现金
+            operation_list.append([0, 1, cash_amount/2, cash_amount/2])
+            operation_list.append([0, 2, cash_amount/2, cash_amount/2]) # 先各买50%
 
         # 聚拢式调仓
         else:
