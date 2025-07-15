@@ -401,6 +401,13 @@ class BackTestFuncInfo:
                             ax2.scatter(trade_date, total_value, color='red', marker='v', s=30, alpha=0.8, zorder=5)
                     break
         
+        # 在左上角标记总回测收益率
+        total_return = result_info.get('total_return', 0)
+        ax2.text(0.02, 0.95, f'总收益率: {total_return:.2f}%', 
+                transform=ax2.transAxes, fontsize=12, fontweight='bold',
+                horizontalalignment='left', verticalalignment='top',
+                bbox=dict(boxstyle='round,pad=0.3', facecolor='yellow', alpha=0.8))
+        
         ax2.set_title('策略回测总价值变化曲线', fontsize=14, fontweight='bold')
         ax2.set_xlabel('日期', fontsize=12)
         ax2.set_ylabel('总价值', fontsize=12)
