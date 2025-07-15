@@ -320,6 +320,7 @@ class BackTestFuncInfo:
                 color = colors[i % len(colors)]
                 ax1.plot(fund_dates, fund_values, linewidth=1.0, color=color, 
                         label=f'{fund.name} ({fund.code})', alpha=0.8)
+        
         # 在基金净值图上标注买入卖出点
         for trade in self.trade_list:
             trade_date = trade[0]
@@ -329,17 +330,8 @@ class BackTestFuncInfo:
                 sellfund = trade[j][0]
                 buyfund = trade[j][1]
                 
-                if sellfund == 0:  # 买入操作（卖出现金买入基金）
-                    fund_idx = buyfund - 1  # 基金索引
-                    if fund_idx < len(fund_list):
-                        fund = fund_list[fund_idx]
-                        date_str = trade_date.strftime("%Y-%m-%d")
-                        if date_str in fund._date2idx_map:
-                            idx = fund._date2idx_map[date_str]
-                            fund_value = fund._unit_value_ls[idx]
-                            ax1.scatter(trade_date, fund_value, color='#f0334f', marker='o', s=15, alpha=0.9, zorder=6, edgecolors='white', linewidth=0.3)
-                
-                elif buyfund == 0:  # 卖出操作（卖出基金买入现金）
+                # 标注卖出点（所有卖出操作）
+                if sellfund > 0:  # 卖出基金（sellfund > 0表示卖出某只基金）
                     fund_idx = sellfund - 1  # 基金索引
                     if fund_idx < len(fund_list):
                         fund = fund_list[fund_idx]
@@ -348,6 +340,17 @@ class BackTestFuncInfo:
                             idx = fund._date2idx_map[date_str]
                             fund_value = fund._unit_value_ls[idx]
                             ax1.scatter(trade_date, fund_value, color='#1274fd', marker='o', s=15, alpha=0.9, zorder=6, edgecolors='white', linewidth=0.3)
+                
+                # 标注买入点（所有买入操作）
+                if buyfund > 0:  # 买入基金（buyfund > 0表示买入某只基金）
+                    fund_idx = buyfund - 1  # 基金索引
+                    if fund_idx < len(fund_list):
+                        fund = fund_list[fund_idx]
+                        date_str = trade_date.strftime("%Y-%m-%d")
+                        if date_str in fund._date2idx_map:
+                            idx = fund._date2idx_map[date_str]
+                            fund_value = fund._unit_value_ls[idx]
+                            ax1.scatter(trade_date, fund_value, color='#f0334f', marker='o', s=15, alpha=0.9, zorder=6, edgecolors='white', linewidth=0.3)
         
         ax1.set_xlabel('日期', fontsize=12)
         ax1.set_ylabel('净值', fontsize=12)
