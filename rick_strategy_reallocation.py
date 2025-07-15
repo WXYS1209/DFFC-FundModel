@@ -79,11 +79,11 @@ class StrategyExample(BackTestFuncInfo):
         
         # 3. 极简版磁滞回线逻辑
         deltahdp = self.strategy_factor_list[0][0] - self.strategy_factor_list[1][0]  # 计算HDP差值
-        if self.memory_switch and deltahdp > 0.7:
-            self.memory_target_position = [0.1, 0.9]  # 更新记忆目标仓位
+        if self.memory_switch and deltahdp > 1.9:
+            self.memory_target_position = [0.025, 0.975]  # 更新记忆目标仓位
             self.memory_switch = False
-        elif not self.memory_switch and deltahdp < -0.7:
-            self.memory_target_position = [0.9, 0.1]  # 更新记忆目标仓位
+        elif not self.memory_switch and deltahdp < -1.9:
+            self.memory_target_position = [0.975, 0.025]  # 更新记忆目标仓位
             self.memory_switch = True
         target_position_hdp = deepcopy(self.memory_target_position)
 
@@ -113,10 +113,10 @@ class StrategyExample(BackTestFuncInfo):
 
 if __name__ == "__main__":
     print("==========================================================")
-    etflist = ExtendedFuncInfo.create_fundlist_config("fund_config_dual.json")
+    etflist = ExtendedFuncInfo.create_fundlist_config("fund_config_dual_ng.json")
     for fund in etflist:
-        fund.load_data_csv(f"./csv_data/{fund.code}.csv")  # 从本地CSV文件加载数据
-        #fund.load_data_net()  # 从网络加载数据
+        #fund.load_data_csv(f"./csv_data/{fund.code}.csv")  # 从本地CSV文件加载数据
+        fund.load_data_net()  # 从网络加载数据
         fund.factor_cal_holtwinters()
         fund.factor_cal_holtwinters_delta_percentage()
         fund.set_info_dict()

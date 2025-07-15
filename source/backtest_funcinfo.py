@@ -287,15 +287,24 @@ class BackTestFuncInfo:
             print("没有回测数据可供绘制")
             return
         
+        # 获取回测统计信息
+        result_info = self.result_info_dict()
+        
         # 绘制总价值变化曲线
         dates = [record[0] for record in self.asset_list]
         total_values = [sum(record[3]) for record in self.asset_list]
         
-        # 创建上下两个子图
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 12))
+        # 创建上下两个子图，预留右侧空间给统计信息
+        fig = plt.figure(figsize=(18, 12))
+        
+        # 设置布局：左侧放图表，右侧放统计信息
+        gs = fig.add_gridspec(2, 2, width_ratios=[3, 1], height_ratios=[1, 1])
+        ax1 = fig.add_subplot(gs[0, 0])  # 上图
+        ax2 = fig.add_subplot(gs[1, 0])  # 下图
+        ax3 = fig.add_subplot(gs[:, 1])  # 右侧统计信息
         
         # 上图：所有基金的净值曲线
-        ax1.set_title('各基金净值变化曲线', fontsize=16, fontweight='bold')
+        ax1.set_title('各基金净值变化曲线', fontsize=14, fontweight='bold')
         
         # 绘制每个基金的净值曲线
         fund_list = self.fund_list
@@ -365,7 +374,7 @@ class BackTestFuncInfo:
         handles.extend([buy_patch, sell_patch])
         labels.extend(['买入点', '卖出点'])
         
-        ax1.legend(handles=handles, labels=labels, bbox_to_anchor=(1.05, 1), loc='upper left')
+        ax1.legend(handles=handles, labels=labels, loc='upper left')
         ax1.grid(True, alpha=0.3)
         ax1.tick_params(axis='x', rotation=45)
         
@@ -392,21 +401,54 @@ class BackTestFuncInfo:
                             ax2.scatter(trade_date, total_value, color='red', marker='v', s=30, alpha=0.8, zorder=5)
                     break
         
-        ax2.set_title('策略回测总价值变化曲线', fontsize=16, fontweight='bold')
+        ax2.set_title('策略回测总价值变化曲线', fontsize=14, fontweight='bold')
         ax2.set_xlabel('日期', fontsize=12)
         ax2.set_ylabel('总价值', fontsize=12)
         ax2.legend()
         ax2.grid(True, alpha=0.3)
         ax2.tick_params(axis='x', rotation=45)
         
-        # 显示最终收益率
-        initial_value = 1.0
-        final_value = total_values[-1] if total_values else 1.0
-        total_return = (final_value - initial_value) / initial_value * 100
-        ax2.text(0.02, 0.98, f'总收益率: {total_return:.2f}%', 
-                transform=ax2.transAxes, fontsize=12, 
-                bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8),
-                verticalalignment='top')
+        # 右侧统计信息面板
+        ax3.axis('off')  # 关闭坐标轴
+        
+        # 格式化统计信息文本
+        info_text = ['回测统计信息', '']  # 标题和空行
+        info_labels = {
+            'start_date': '开始日期',
+            'end_date': '结束日期',
+            'initial_value': '初始价值',
+            'final_value': '最终价值',
+            'total_return': '总收益率(%)',
+            'maximum_drawdown': '最大回撤(%)',
+            'recovery_days': '回撤修复天数',
+            'trade_count': '交易次数',
+            'sharpe_ratio': '夏普比率',
+            'holding_rate': '现金比率'
+        }
+        
+        for key, label in info_labels.items():
+            if key in result_info:
+                value = result_info[key]
+                if isinstance(value, float):
+                    if key in ['total_return', 'maximum_drawdown']:
+                        formatted_value = f"{value:.2f}%"
+                    elif key == 'sharpe_ratio':
+                        formatted_value = f"{value:.4f}" if value is not None else "N/A"
+                    elif key == 'holding_rate':
+                        formatted_value = f"{value:.2%}"
+                    else:
+                        formatted_value = f"{value:.2f}"
+                else:
+                    formatted_value = str(value)
+                info_text.append(f"{label}: {formatted_value}")
+        
+        # 在右侧面板显示统计信息，标题在框内
+        text_str = '\n'.join(info_text)
+        ax3.text(0.05, 0.85, text_str, transform=ax3.transAxes, fontsize=11,
+                verticalalignment='top', horizontalalignment='left',
+                bbox=dict(boxstyle='round,pad=1.2', facecolor='white', 
+                         edgecolor='black', linewidth=1.0, alpha=1.0),
+                color='black', linespacing=1.4)  # 稍微增加行间距
         
         plt.tight_layout()
         plt.show()
@@ -431,4 +473,5 @@ if __name__ == "__main__":
     backtest = BackTestFuncInfo(fund_list=[fundmain], start_date=datetime(2023, 1, 1), end_date=datetime(2025, 6, 1))
     backtest.run()
     backtest.plot_result()
+    # 绘制结果
     # 绘制结果
