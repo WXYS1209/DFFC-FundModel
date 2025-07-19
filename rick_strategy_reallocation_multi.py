@@ -35,9 +35,12 @@ class StrategyExample(BackTestFuncInfo):
         self.target_position = [0., 0.5, 0.5]
         # 归一化目标仓位
         self.target_position = [x / sum(self.target_position) for x in self.target_position]
+        # 调仓靠拢系数
+        self.adjust_factor = 0.2
         # 初始化目标仓位记忆开关
-        self.memory_switch = True
-        self.memory_target_position = deepcopy(self.target_position)
+        self.level_list = [0 for _ in range(len(self.target_position))]  # 初始化HDP水平列表
+        self.parameter_list = [[0.8, 0.2] for _ in range(len(self.target_position))]  # 初始化HDP参数列表
+        self.threshold_list = [[-0.5, 0.5] for _ in range(len(self.target_position))]  # 初始化HDP阈值列表
 
     # 重写策略函数
     def strategy_func(self):
@@ -52,27 +55,43 @@ class StrategyExample(BackTestFuncInfo):
                     # 初始化目标仓位
                     operation_list.append([0, i, self.target_position[i], self.target_position[i]])  # 初始化目标仓位   
             return operation_list
-            
-        # 如果不是回测开始日期，则需要进行调仓，根据算法计算出目标仓位
-        deltahdp = self.strategy_factor_list[0][0] - self.strategy_factor_list[1][0]  # 计算HDP差值
-        if self.memory_switch and deltahdp > .5:
-            self.memory_target_position = [0., 0.2, 0.8]  # 更新记忆目标仓位
-            self.memory_switch = False
-        elif not self.memory_switch and deltahdp < -.5:
-            self.memory_target_position = [0., 0.8, 0.2]  # 更新记忆目标仓位
-            self.memory_switch = True
-        target_position_hdp = deepcopy(self.memory_target_position)
+        
+        # 使用小方块策略，从HDP计算目标仓位系数target_position_parameter
+        # 更新hdp参数
+        target_position_parameter = []
+        for i in range(len(self.target_position)):
+            if i == 0:
+                # 对于第一个资产，直接使用目标仓位
+                target_position_parameter.append(0.5)
+                continue
+            if self.level_list[i] == 0:
+                # 如果HDP水平为0，则使用初始目标仓位
+                if self.strategy_factor_list[i-1][0] > self.threshold_list[i][1]:
+                    self.level_list[i] = 1  # 设置HDP水平为1
+                    target_position_parameter.append(self.parameter_list[i][self.level_list[i]])
+                else:
+                    target_position_parameter.append(self.parameter_list[i][0])
+            elif self.level_list[i] == 1:
+                if self.strategy_factor_list[i-1][0] < self.threshold_list[i][0]:
+                    self.level_list[i] = 0
+                    target_position_parameter.append(self.parameter_list[i][0])
+                else:
+                    target_position_parameter.append(self.parameter_list[i][self.level_list[i]])
 
+        # 使用target_position_parameter计算目标仓位target_position_hdp
+        target_position_hdp = [self.target_position[i] * target_position_parameter[i] for i in range(len(self.target_position))]
+        # 归一化目标仓位
+        total_target_position = sum(target_position_hdp)
+        target_position_hdp = [x / total_target_position for x in target_position_hdp]
 
-        # 计算当前持仓价值
+        # 通过target_position_hdp给出的目标仓位计算调仓，计算当前持仓价值
         currentprice =[self.current_asset[1][0]] + [self.current_asset[1][i+1]* self.strategy_unit_value_list[i][0] for i in range(len(self.strategy_unit_value_list))]  # 当前持仓的资产值
         targetprice = [sum(currentprice) * target_position_hdp[i] for i in range(len(target_position_hdp))]  # 目标持仓的资产值
         # 计算当前持仓和目标持仓的差值
         diffprice = [targetprice[i] - currentprice[i] for i in range(len(targetprice))]  # 计算差值
 
         # 计算调仓量，按照差值的0.5倍进行调整
-        adjust_factor = 0.1  # 可调参数，调整差值的倍率
-        adjust_diffprice = [diffprice[i] * adjust_factor for i in range(len(diffprice))]  # 调整差值
+        adjust_diffprice = [diffprice[i] * self.adjust_factor for i in range(len(diffprice))]  # 调整差值
 
         def get_operation_list(adjust_diffprice):
             """

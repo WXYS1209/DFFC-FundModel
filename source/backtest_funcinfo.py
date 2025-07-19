@@ -378,7 +378,7 @@ class BackTestFuncInfo:
         ax1.grid(True, alpha=0.3)
         ax1.tick_params(axis='x', rotation=45)
         
-        # 下图：策略总价值变化曲线
+        # 下图：策略总价值变化曲线（左轴）和仓位比例（右轴）
         ax2.plot(dates, total_values, linewidth=1.5, color='blue', label='策略总价值')
         ax2.axhline(y=1.0, color='red', linestyle='--', alpha=0.7, label='初始价值')
         
@@ -408,10 +408,48 @@ class BackTestFuncInfo:
                 horizontalalignment='left', verticalalignment='top',
                 bbox=dict(boxstyle='round,pad=0.3', facecolor='yellow', alpha=0.8))
         
-        ax2.set_title('策略回测总价值变化曲线', fontsize=14, fontweight='bold')
+        # 创建右轴用于显示仓位比例
+        ax2_right = ax2.twinx()
+        
+        # 计算各仓位占总持仓的比例
+        cash_ratios = []
+        fund_ratios = [[] for _ in range(len(self.fund_list))]
+        
+        for record in self.asset_list:
+            total_value = sum(record[3])
+            if total_value > 0:
+                # 现金比例
+                cash_ratios.append(record[3][0] / total_value * 100)
+                # 各基金比例
+                for i in range(len(self.fund_list)):
+                    fund_ratios[i].append(record[3][i+1] / total_value * 100)
+            else:
+                cash_ratios.append(0)
+                for i in range(len(self.fund_list)):
+                    fund_ratios[i].append(0)
+        
+        # 绘制仓位比例线
+        ax2_right.plot(dates, cash_ratios, linewidth=1.0, color='orange', alpha=0.7, 
+                      linestyle=':', label='现金比例')
+        
+        for i, fund in enumerate(self.fund_list):
+            color = colors[(i+1) % len(colors)]
+            ax2_right.plot(dates, fund_ratios[i], linewidth=1.0, color=color, alpha=0.7,
+                          linestyle=':', label=f'{fund.name}比例')
+        
+        ax2.set_title('策略回测总价值变化曲线与仓位比例', fontsize=14, fontweight='bold')
         ax2.set_xlabel('日期', fontsize=12)
         ax2.set_ylabel('总价值', fontsize=12)
-        ax2.legend()
+        ax2_right.set_ylabel('仓位比例 (%)', fontsize=12)
+        
+        # 设置右轴范围
+        ax2_right.set_ylim(0, 100)
+        
+        # 合并图例
+        lines1, labels1 = ax2.get_legend_handles_labels()
+        lines2, labels2 = ax2_right.get_legend_handles_labels()
+        ax2.legend(lines1 + lines2, labels1 + labels2, loc='upper left')
+        
         ax2.grid(True, alpha=0.3)
         ax2.tick_params(axis='x', rotation=45)
         
@@ -480,5 +518,4 @@ if __name__ == "__main__":
     backtest = BackTestFuncInfo(fund_list=[fundmain], start_date=datetime(2023, 1, 1), end_date=datetime(2025, 6, 1))
     backtest.run()
     backtest.plot_result()
-    # 绘制结果
     # 绘制结果

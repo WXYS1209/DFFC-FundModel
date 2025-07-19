@@ -470,8 +470,8 @@ $$
 ##### 多基金策略 ：模型
 - 设置HDP = 0%时目标仓位$T_{i0}$：减小最大回撤，按照波动率反比or目标收益率计算均衡时刻的目标仓位
 - 根据HDP调整目标仓位计算逻辑：
-   - 目标仓位的计算：$$T_i = \frac{T_{i0} \cdot (1 - \theta_i)}{\Sigma_i \left( T_{i0} \cdot \left(1 - \theta_i\right)\right)}$$
-   - 其中$\theta_i$是仓位系数，是自己的$HDP_i$的，有记忆效应的函数，$\theta_i = (-1,1)$且与HDP正相关。
+   - 目标仓位的计算：$$T_i = \frac{T_{i0} \cdot \theta_i}{\Sigma_i \left( T_{i0} \cdot \theta_i\right)}$$
+   - 其中$\theta_i$是仓位系数，是自己的$HDP_i$的，有记忆效应的函数，$\theta_i = (0,1)$且与HDP负相关。
    - 例如，使用水货小方块策略。
 
 - 固定周期调仓：逐渐靠拢目标仓位，每次向目标仓位靠拢差值的百分数：$$adjust\_factor = [0, 1]$$
