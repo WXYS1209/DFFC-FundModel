@@ -1,0 +1,91 @@
+[
+  {
+    "code": "013360",
+    "name": "华夏磐泰混合(LOF)",
+    "params": {
+      "alpha": 0.0956,
+      "beta": 0.005153,
+      "gamma": 0.1863,
+      "season_length": 17
+    },
+    "fund_type": "long",
+    "tag": "债基"
+  },
+  {
+    "code": "007467",
+    "name": "华泰柏瑞中证红利低波动ETF联接C",
+    "params": {
+      "alpha": 0.08776,
+      "beta": 0.05789,
+      "gamma": 0.09095,
+      "season_length":17 
+    },
+    "estimate_info": {
+      "code": "512890",
+      "type": "fund"
+    },
+    "fund_type": "long",
+    "tag":"红利"
+  },
+  {
+    "code": "004253",
+    "name": "国泰黄金ETF联接C",
+    "params": {
+      "alpha": 0.111,
+      "beta": 0.00609,
+      "gamma": 0.0277,
+      "season_length": 14
+    },
+    "estimate_info": {
+      "code": "518880",
+      "type": "fund"
+    },
+    "fund_type": "long",
+    "tag": "黄金"
+  },
+  {
+    "code": "017437",
+    "name": "华宝纳斯达克精选股票C",
+    "params": {
+      "alpha": 0.1445,
+      "beta": 0.01035,
+      "gamma": 0.086457,
+      "season_length": 23 
+    },
+    "fund_type": "long",
+    "tag": "美股"
+  },
+  {
+    "code": "007280",
+    "name": "摩根日本精选股票A",
+    "params": {
+      "alpha": 0.0937,
+      "beta": 0.004728,
+      "gamma": 0.026981,
+      "season_length": 22
+    },
+    "tag": "日本精选"
+  },
+  {
+    "code": "161815",
+    "name": "银华抗通胀主题A",
+    "params": {
+      "alpha": 0.14539,
+      "beta": 0.002194,
+      "gamma": 0.0181,
+      "season_length": 21
+    },
+    "tag": "大宗通胀"
+  },
+  {
+    "code": "015016",
+    "name": "华安国际龙头(DAX)ETF联接C",
+    "params": {
+      "alpha": 0.04368,
+      "beta": 0.025886,
+      "gamma": 0.420741,
+      "season_length": 15
+    },
+    "tag": "德国"
+  }
+]

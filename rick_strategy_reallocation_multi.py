@@ -1,5 +1,6 @@
 from datetime import datetime
 from copy import deepcopy
+import numpy as np
 import matplotlib.pyplot as plt
 from source.backtest_funcinfo import BackTestFuncInfo
 from source.extended_funcinfo import ExtendedFuncInfo
@@ -23,6 +24,64 @@ plt.rcParams['axes.unicode_minus'] = False
 
 '''
 
+def preisach_hysteresis(H_array, threshold_max=1.0, grid_size=30, sigma=4, center_bias=0.3, updownclip=0.9):
+    """
+    Preisach磁滞回线模型
+    
+    参数:
+        H_array: 磁场输入数组
+        threshold_max: 最大阈值
+        grid_size: 网格大小
+        sigma: 高斯分布参数
+        center_bias: 中心偏移
+        updownclip: 上下限归一化参数 (0~1)
+    返回:
+        M_array: 归一化磁化强度数组 (0~1)
+    """
+    H_input = np.array(H_array)
+    
+    # 创建网格
+    alpha_grid = np.linspace(-threshold_max, threshold_max, grid_size)
+    beta_grid = np.linspace(-threshold_max, threshold_max, grid_size)
+    dα = alpha_grid[1] - alpha_grid[0]
+    dβ = beta_grid[1] - beta_grid[0]
+    
+    # 预计算分布函数
+    distribution = np.zeros((grid_size, grid_size))
+    valid_mask = np.zeros((grid_size, grid_size), dtype=bool)
+    
+    for i, alpha in enumerate(alpha_grid):
+        for j, beta in enumerate(beta_grid):
+            if alpha >= beta:
+                da = alpha - center_bias
+                db = beta + center_bias
+                distribution[i, j] = np.exp(-2 * sigma**2 * (da**2 + db**2))
+                valid_mask[i, j] = True
+    
+    # 初始化滞后算子状态
+    relay_states = np.full((grid_size, grid_size), -1.0)
+    M_result = np.zeros_like(H_input)
+    
+    # 计算磁化强度
+    for idx, H in enumerate(H_input):
+        # 更新滞后算子状态
+        for i, alpha in enumerate(alpha_grid):
+            for j, beta in enumerate(beta_grid):
+                if valid_mask[i, j]:
+                    if H >= alpha:
+                        relay_states[i, j] = 1.0
+                    elif H <= beta:
+                        relay_states[i, j] = -1.0
+        
+        # 计算当前磁化强度
+        M_result[idx] = np.sum(distribution * relay_states * valid_mask) * dα * dβ
+    
+    # 归一化到0~1
+    M_min, M_max = M_result.min(), M_result.max()
+    if M_max > M_min:
+        M_result = (M_result - M_min) / (M_max - M_min)
+    M_result = M_result * (2*updownclip-1) + (1 - updownclip)
+    return M_result
 
 class StrategyExample(BackTestFuncInfo):
     """
@@ -36,7 +95,7 @@ class StrategyExample(BackTestFuncInfo):
         # 归一化目标仓位
         self.target_position = [x / sum(self.target_position) for x in self.target_position]
         # 调仓靠拢系数
-        self.adjust_factor = 0.2
+        self.adjust_factor = 0.3
         # 初始化目标仓位记忆开关
         self.level_list = [0 for _ in range(len(self.target_position))]  # 初始化HDP水平列表
         self.parameter_list = [[0.8, 0.2] for _ in range(len(self.target_position))]  # 初始化HDP参数列表
@@ -55,9 +114,24 @@ class StrategyExample(BackTestFuncInfo):
                     # 初始化目标仓位
                     operation_list.append([0, i, self.target_position[i], self.target_position[i]])  # 初始化目标仓位   
             return operation_list
+
+        # 从HDP计算目标仓位系数target_position_parameter====================
+        # 使用磁滞回线策略
+        target_position_parameter = []
+        for i in range(len(self.target_position)):
+            if i == 0:
+                # 对于第一个资产，直接使用目标仓位
+                target_position_parameter.append(0.5)
+                continue
+            
+            hdp_list = self.strategy_factor_list[i-1].copy()
+            hdp_list.reverse()
+            # 使用磁滞回线模型计算HDP
+            hdp_result = preisach_hysteresis(hdp_list, threshold_max=1.0, grid_size=30, sigma=3, center_bias=0.6, updownclip=0.95)
+            target_position_parameter.append(1-hdp_result[-1])  # 取最后一个值作为目标仓位系数
         
-        # 使用小方块策略，从HDP计算目标仓位系数target_position_parameter
-        # 更新hdp参数
+        # 使用小方块策略
+        '''
         target_position_parameter = []
         for i in range(len(self.target_position)):
             if i == 0:
@@ -77,6 +151,7 @@ class StrategyExample(BackTestFuncInfo):
                     target_position_parameter.append(self.parameter_list[i][0])
                 else:
                     target_position_parameter.append(self.parameter_list[i][self.level_list[i]])
+        '''
 
         # 使用target_position_parameter计算目标仓位target_position_hdp
         target_position_hdp = [self.target_position[i] * target_position_parameter[i] for i in range(len(self.target_position))]

@@ -22,11 +22,16 @@ class StrategyExample(BackTestFuncInfo):
 
         # 目标仓位列表
         self.target_position = [0.5, 0.5]
-        # 归一化目标仓位
-        self.target_position = [x / sum(self.target_position) for x in self.target_position]
+        self.target_position = [x / sum(self.target_position) for x in self.target_position] # 归一化目标仓位
+        self.threshold = 0.8  # 磁滞回线阈值
+        self.up_targetposition = [0.2, 0.8]  # 上升目标仓位
+        self.down_targetposition = [0.8, 0.2]  #
+        self.adjust_factor = 0.2  # 调整因子，控制调仓力度
+
         # 初始化目标仓位记忆开关
         self.memory_switch = True
         self.memory_target_position = deepcopy(self.target_position)
+        
 
     # 重写策略函数
     def strategy_func(self):
@@ -42,11 +47,11 @@ class StrategyExample(BackTestFuncInfo):
         
         # 1. 极简版磁滞回线逻辑
         deltahdp = self.strategy_factor_list[0][0] - self.strategy_factor_list[1][0]  # 计算HDP差值
-        if self.memory_switch and deltahdp > .5:
-            self.memory_target_position = [0.2, 0.8]  # 更新记忆目标仓位
+        if self.memory_switch and deltahdp > self.threshold:
+            self.memory_target_position = self.up_targetposition  # 更新记忆目标仓位
             self.memory_switch = False
-        elif not self.memory_switch and deltahdp < -.5:
-            self.memory_target_position = [0.8, 0.2]  # 更新记忆目标仓位
+        elif not self.memory_switch and deltahdp < -self.threshold:
+            self.memory_target_position = self.down_targetposition  # 更新记忆目标仓位
             self.memory_switch = True
         target_position_hdp = deepcopy(self.memory_target_position)
 
@@ -59,7 +64,7 @@ class StrategyExample(BackTestFuncInfo):
         diffshare = [diffprice[i] / self.strategy_unit_value_list[i][0] for i in range(len(diffprice))]  # 转换为份额差值   
 
         # 计算调仓量，按照差值的0.5倍进行调整
-        adjust_factor = 0.1  # 可调参数，调整差值的倍率
+        adjust_factor = self.adjust_factor  # 可调参数，调整差值的倍率
         adjust_diffshare = [diffshare[i]*adjust_factor for i in range(len(diffshare))]  # 调整差值
 
         # 初始化买入和卖出数量

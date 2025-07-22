@@ -448,6 +448,42 @@ $$
 - 根据因子在其中调仓
 - 组合内部使用波差统计套利
 
+##### 策略思路
+- 低吸高抛，网格策略的例子：没有记忆效应就无法得到收益。
+
+<div style="display: flex; justify-content: space-around; align-items: center;">
+    <img src="./fig/grid_h.png" alt="网格策略示例" width="400" title="网格策略示例"/>
+    <img src="./fig/strategy_grid.jpeg" alt="另一个示例" width="500" title="另一个示例"/>
+</div>
+
+- 记忆效应：水货小方块策略，问题——单层分仓，只做左侧交易。
+
+<div style="display: flex; justify-content: space-around; align-items: center;">
+    <img src="./fig/Lsquare_show.png" alt="网格策略示例" width="400" title="网格策略示例"/>
+    <img src="./fig/strategy_LSquare.jpeg" alt="另一个示例" width="500" title="另一个示例"/>
+</div>
+
+- 右侧交易的实现：最高点的逼近。
+
+<div style="display: flex; justify-content: space-around; align-items: center;">
+    <img src="./fig/LRsquare_show.png" alt="网格策略示例" width="400" title="网格策略示例"/>
+    <img src="./fig/strategy_LRSquare.jpeg" alt="另一个示例" width="500" title="另一个示例"/>
+</div>
+
+- 多层分仓的实现：最高点的逼近。
+
+<div style="display: flex; justify-content: space-around; align-items: center;">
+    <img src="./fig/LRsquare2_show.png" alt="网格策略示例" width="400" title="网格策略示例"/>
+    <img src="./fig/strategy_StratifiedLRSquare.jpeg" alt="另一个示例" width="500" title="另一个示例"/>
+</div>
+
+- 无穷多分仓：磁滞回线策略。
+
+<div style="display: flex; justify-content: space-around; align-items: center;">
+    <img src="./fig/strategy_wiki_magloop.jpeg" alt="网格策略示例" width="200" title="网格策略示例"/>
+    <img src="./fig/strategy_wiki_square.jpeg" alt="另一个示例" width="300" title="另一个示例"/>
+</div>
+
 ##### 双基金策略 ：水货小方块策略
 - 设置目标仓位：减小最大回撤，控制风险，按照波动率反比计算均衡时刻的目标仓位
    - 目标仓位计算逻辑：
@@ -467,7 +503,7 @@ $$
          如果发现长期趋势不对，则不再买入该标的，直到趋势恢复，而是只卖出。
 - 事件驱动调仓：如果是长周期+大靠拢系数，加入事件驱动保证不会错过机会。
 
-##### 多基金策略 ：模型
+##### 多基金策略 ：仓位系数加权模型
 - 设置HDP = 0%时目标仓位$T_{i0}$：减小最大回撤，按照波动率反比or目标收益率计算均衡时刻的目标仓位
 - 根据HDP调整目标仓位计算逻辑：
    - 目标仓位的计算：$$T_i = \frac{T_{i0} \cdot \theta_i}{\Sigma_i \left( T_{i0} \cdot \theta_i\right)}$$
@@ -483,7 +519,11 @@ $$
 ###### 优化问题
 - 单个标的的仓位上限，避免极端情况出现和极度押宝
 - 每个标的的磁滞回线优化问题。
-- 怎么用二元的交易，用最少的调仓量（手续费）达到目标仓位？
+- 使用磁滞回线计算双基金对冲的结果没有双基金配对的结果好，或许没有用差配置磁滞回线好？还是没有对每个基金优化？
+- 如果使用配对分布矩阵处理多基金呢？
+
+##### 多基金策略 ：配对矩阵模型
+- 至少包含双基金策略，可以处理有些基金无法转换调仓的问题。
 
 #### 进攻基金组（20%）
 - 根据波动率计算价格，按照订单进攻
