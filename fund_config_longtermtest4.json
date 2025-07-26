@@ -1,0 +1,58 @@
+[
+  {
+    "code": "007467",
+    "name": "华泰柏瑞中证红利低波动ETF联接C",
+    "params": {
+      "alpha": 0.08776,
+      "beta": 0.05789,
+      "gamma": 0.09095,
+      "season_length":17 
+    },
+    "estimate_info": {
+      "code": "512890",
+      "type": "fund"
+    },
+    "fund_type": "long",
+    "tag":"红利"
+  },
+  {
+    "code": "004253",
+    "name": "国泰黄金ETF联接C",
+    "params": {
+      "alpha": 0.111,
+      "beta": 0.00609,
+      "gamma": 0.0277,
+      "season_length": 14
+    },
+    "estimate_info": {
+      "code": "518880",
+      "type": "fund"
+    },
+    "fund_type": "long",
+    "tag": "黄金"
+  },
+  {
+    "code": "013360",
+    "name": "华夏磐泰混合(LOF)",
+    "params": {
+      "alpha": 0.0956,
+      "beta": 0.005153,
+      "gamma": 0.1863,
+      "season_length": 17
+    },
+    "fund_type": "long",
+    "tag": "债基"
+  },
+  {
+    "code": "270042",
+    "name": "广发纳斯达克100ETF联接A",
+    "params": {
+      "alpha": 0.1327,
+      "beta": 0.0017,
+      "gamma": 0.0896,
+      "season_length": 23
+    },
+    "fund_type": "long",
+    "tag": "美股"
+  }
+]

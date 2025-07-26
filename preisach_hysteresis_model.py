@@ -6,7 +6,7 @@ from matplotlib.animation import FuncAnimation
 plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
 plt.rcParams['axes.unicode_minus'] = False
 
-def preisach_hysteresis(H_array, threshold_max=1.0, grid_size=50, sigma=4, center_bias=0.5, updownclip=0.9):
+def preisach_hysteresis(H_array, threshold_max=1.0, grid_size=50, sigma=40, center_bias=0.5, updownclip=0.9):
     """
     Preisach磁滞回线模型
     

@@ -1,0 +1,30 @@
+[
+  {
+    "code": "007467",
+    "name": "华泰柏瑞中证红利低波动ETF联接C",
+    "params": {
+      "alpha": 0.08776,
+      "beta": 0.05789,
+      "gamma": 0.09095,
+      "season_length":17 
+    },
+    "estimate_info": {
+      "code": "512890",
+      "type": "fund"
+    },
+    "fund_type": "long",
+    "tag":"红利"
+  },
+  {
+    "code": "013360",
+    "name": "华夏磐泰混合(LOF)",
+    "params": {
+      "alpha": 0.0956,
+      "beta": 0.005153,
+      "gamma": 0.1863,
+      "season_length": 17
+    },
+    "fund_type": "long",
+    "tag": "债基"
+  }
+]

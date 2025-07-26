@@ -44,13 +44,13 @@
     "tag": "黄金"
   },
   {
-    "code": "017437",
-    "name": "华宝纳斯达克精选股票C",
+    "code": "270042",
+    "name": "广发纳斯达克100ETF联接A",
     "params": {
-      "alpha": 0.1445,
-      "beta": 0.01035,
-      "gamma": 0.086457,
-      "season_length": 23 
+      "alpha": 0.1327,
+      "beta": 0.0017,
+      "gamma": 0.0896,
+      "season_length": 23
     },
     "fund_type": "long",
     "tag": "美股"

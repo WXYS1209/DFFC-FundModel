@@ -21,15 +21,14 @@ class StrategyExample(BackTestFuncInfo):
         super().__init__(fund_list, start_date, end_date)
 
         # 目标仓位列表
-        self.target_position = [0.5, 0.5]
+        self.target_position = [0., 1.]
         self.target_position = [x / sum(self.target_position) for x in self.target_position] # 归一化目标仓位
-        self.threshold = 0.8  # 磁滞回线阈值
-        self.up_targetposition = [0.2, 0.8]  # 上升目标仓位
-        self.down_targetposition = [0.8, 0.2]  #
+        self.threshold1 = 0.6  # 磁滞回线阈值
+        self.targetposition_list = [[0.2, 0.8], [0.5, 0.5], [0.8, 0.2], [0.5, 0.5]]  # 目标仓位列表
         self.adjust_factor = 0.2  # 调整因子，控制调仓力度
 
         # 初始化目标仓位记忆开关
-        self.memory_switch = True
+        self.memory_switch = 0
         self.memory_target_position = deepcopy(self.target_position)
         
 
@@ -46,14 +45,28 @@ class StrategyExample(BackTestFuncInfo):
             return operation_list
         
         # 1. 极简版磁滞回线逻辑
-        deltahdp = self.strategy_factor_list[0][0] - self.strategy_factor_list[1][0]  # 计算HDP差值
-        if self.memory_switch and deltahdp > self.threshold:
-            self.memory_target_position = self.up_targetposition  # 更新记忆目标仓位
-            self.memory_switch = False
-        elif not self.memory_switch and deltahdp < -self.threshold:
-            self.memory_target_position = self.down_targetposition  # 更新记忆目标仓位
-            self.memory_switch = True
+        deltahdp = - (self.strategy_factor_list[0][0] - self.strategy_factor_list[1][0])  # 计算HDP差值
+        if self.memory_switch == 0:
+            if deltahdp > self.threshold1:
+                self.memory_target_position = self.targetposition_list[1]
+                self.memory_switch = 1
+        elif self.memory_switch == 1:
+            if deltahdp < self.threshold1:
+                self.memory_target_position = self.targetposition_list[2]
+                self.memory_switch = 2
+        elif self.memory_switch == 2:
+            if deltahdp < -self.threshold1:
+                self.memory_target_position = self.targetposition_list[3]
+                self.memory_switch = 3
+        elif self.memory_switch == 3:
+            if deltahdp > -self.threshold1:
+                self.memory_target_position = self.targetposition_list[0]
+                self.memory_switch = 0
+
+        # 记忆目标仓位
         target_position_hdp = deepcopy(self.memory_target_position)
+        target_position_hdp = [target_position_hdp[i]*self.target_position[i] for i in range(len(target_position_hdp))]
+        target_position_hdp = [x / sum(target_position_hdp) for x in target_position_hdp]  # 归一化目标仓位
 
 
         # 计算当前持仓价值
