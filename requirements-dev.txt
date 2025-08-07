@@ -1,0 +1,23 @@
+# Testing dependencies
+pytest>=6.0
+pytest-cov>=2.0
+pytest-mock>=3.0
+coverage>=6.0
+
+# Development dependencies
+black>=22.0
+flake8>=4.0
+mypy>=0.910
+isort>=5.0
+
+# Documentation
+sphinx>=4.0
+sphinx-rtd-theme>=1.0
+
+# Notebooks
+jupyter>=1.0
+ipykernel>=6.0
+ipywidgets>=7.0
+
+# XML parsing (for testing)
+lxml>=4.6.0
