@@ -92,14 +92,16 @@ def safe_float_convert(value: Any, default: Optional[float] = None) -> Optional[
     
     if isinstance(value, str):
         # 移除百分号和空格
-        value = value.strip().replace('%', '')
+        value = value.strip()
         
         # 处理中文标点
         value = value.replace('，', '').replace('－', '-')
         
         try:
+            if "%" in value:
+                return float(value.replace("%", ""))
             return float(value)
-        except ValueError:
+        except (ValueError, TypeError):
             return default
     
     try:

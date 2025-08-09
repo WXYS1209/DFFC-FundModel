@@ -5,14 +5,16 @@
 """
 
 from datetime import datetime
-from typing import Optional, Dict, Any, List, Union
+from typing import Optional, Dict, Any, List, Union, TYPE_CHECKING
 import pandas as pd
 
 from .base import Asset, AssetRecord
-from .providers import DataProvider
 from ..core.exceptions import ValidationError
 from ..utils.date_utils import parse_date
 from ..utils.validators import safe_float_convert
+
+if TYPE_CHECKING:
+    from ..data_provider.base import DataProvider
 
 
 class Fund(Asset):
@@ -63,7 +65,7 @@ class Fund(Asset):
     def load_data(self, 
                   start_date: Optional[datetime] = None, 
                   end_date: Optional[datetime] = None, 
-                  provider: Optional[DataProvider] = None, 
+                  provider: Optional["DataProvider"] = None, 
                   data: Optional[Union[pd.DataFrame, List[AssetRecord], List[Dict[str, Any]]]] = None) -> None:
         """
         加载基金数据

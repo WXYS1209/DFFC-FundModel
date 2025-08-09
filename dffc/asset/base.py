@@ -34,15 +34,25 @@ class AssetRecord:
     unit_value: Optional[float] = None      # 单位净值
     cumulative_value: Optional[float] = None # 累计净值
     daily_growth_rate: Optional[float] = None # 日增长率
-    
-    # 状态信息
+    ## 状态信息
     purchase_state: Optional[str] = None    # 申购状态
     redemption_state: Optional[str] = None  # 赎回状态
     bonus_distribution: Optional[str] = None # 分红送配
-    
-    # 其他信息
+    ## 其他信息
     dividend: Optional[float] = None        # 分红
     split_ratio: Optional[float] = None     # 拆分比例
+    
+    # 估值相关
+    current_price: Optional[float] = None      # 当前价格
+    yesterday_close: Optional[float] = None    # 昨日收盘价
+    today_open: Optional[float] = None         # 今日开盘价
+    today_high: Optional[float] = None         # 今日最高价
+    today_low: Optional[float] = None          # 今日最低价
+    amount: Optional[float] = None             # 成交金额
+    change: Optional[float] = None             # 涨跌额
+    change_percent: Optional[float] = None     # 涨跌幅
+    timestamp: Optional[datetime] = None       # 时间戳
+    source: Optional[str] = None               # 数据来源
     
     def __post_init__(self):
         """数据验证和后处理"""

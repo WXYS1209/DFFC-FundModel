@@ -10,10 +10,10 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 from bs4 import BeautifulSoup
 
-from .providers import BS4DataProvider, DataProviderConfig
+from .base import BS4DataProvider, DataProviderConfig
 from .base import AssetRecord
 from ..core.exceptions import DataFetchError, ValidationError
-from ..utils.validators import validate_fund_code
+from ..utils.validators import validate_fund_code, safe_float_convert
 
 
 class EastMoneyFundProvider(BS4DataProvider):
@@ -169,9 +169,9 @@ class EastMoneyFundProvider(BS4DataProvider):
             date_obj = datetime.strptime(date_str, "%Y-%m-%d")
             
             # 解析数值型字段
-            unit_value = self._parse_float(data.get("单位净值"))
-            cumulative_value = self._parse_float(data.get("累计净值"))
-            daily_growth_rate = self._parse_float(data.get("日增长率"))
+            unit_value = safe_float_convert(data.get("单位净值"))
+            cumulative_value = self.safe_float_convert(data.get("累计净值"))
+            daily_growth_rate = self.safe_float_convert(data.get("日增长率"))
             
             # 创建AssetRecord对象
             record = AssetRecord(
@@ -191,26 +191,6 @@ class EastMoneyFundProvider(BS4DataProvider):
         except ValueError as e:
             raise ValidationError(f"Invalid date format in data: {date_str}, error: {str(e)}")
     
-    def _parse_float(self, value: Any) -> Optional[float]:
-        """
-        安全地解析浮点数
-        
-        Args:
-            value: 要解析的值
-            
-        Returns:
-            浮点数或None
-        """
-        if value is None or value == "" or value == "--":
-            return None
-        
-        try:
-            # 处理百分号
-            if isinstance(value, str) and "%" in value:
-                return float(value.replace("%", "")) / 100
-            return float(value)
-        except (ValueError, TypeError):
-            return None
     
     @property
     def name(self) -> str:

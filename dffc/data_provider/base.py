@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 from dataclasses import dataclass
 
-from .base import AssetRecord
+from ..asset.base import AssetRecord
 from ..utils.date_utils import validate_date_range
 from ..core.exceptions import DataFetchError
 

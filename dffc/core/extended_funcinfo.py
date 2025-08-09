@@ -5,7 +5,7 @@ import copy
 import json
 import os
 from datetime import datetime
-from ..data.stock_net_value_crawler import StockNetValueCrawler
+from ..data_provider.stock_net_value_crawler import StockNetValueCrawler
 import matplotlib.pyplot as plt
 
 class ExtendedFuncInfo(FuncInfo):
