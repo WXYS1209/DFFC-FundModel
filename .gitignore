@@ -136,7 +136,7 @@ ipython_config.py
 test_wxy/
 
 # Data files (uncomment if you want to ignore data files)
-data/
+./data/
 *.csv
 # data/raw/*.csv
 # data/raw/*.json
